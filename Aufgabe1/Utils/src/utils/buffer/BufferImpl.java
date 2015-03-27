@@ -15,7 +15,6 @@ public class BufferImpl<E extends Object> implements Buffer<E>{
 	private final Condition outQueueNotEmpty;
 	
 	public BufferImpl() {
-		super();
 		this.inQueue = new ConcurrentLinkedQueue<E>();
 		this.outQueue = new ConcurrentLinkedQueue<E>();
 		this.inQueueReadLock = new ReentrantLock();
