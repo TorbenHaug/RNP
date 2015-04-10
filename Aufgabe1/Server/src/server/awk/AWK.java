@@ -32,7 +32,11 @@ public class AWK implements Runnable{
 		
 	}
 	
-	
+	/**
+	 * converts the input string to the intended output string
+	 * @param input  string which has to be converted
+	 * @return  converted input
+	 */
 	private String convertImput(String input){
 		String returnMessage;
 		
@@ -43,10 +47,18 @@ public class AWK implements Runnable{
 		
 		String command = splitString[0];
 		
-		if(command.equals("BYE")){
-			/* do what you have to do here */
+		/* If empty string is given*/ 
+		if(command.equals("\n")){
+			return returnMessage = "ERROR SYNTAX ERROR: EMPTY STRING";
 		}
-		else if (splitString.length < 2){
+		
+		if(command.equals("BYE")){
+			if(splitString.length == 1){
+				return returnMessage = "OK BYE";
+			}else if(splitString.length > 1){
+				return returnMessage = " ERROR SNTAX ERROR: COMMAND 'BYE' DOES NOT EXPECT PARAMETERS";
+			}
+		}else if (splitString.length < 2){
 			return returnMessage = "ERROR SYNTAX ERROR: MESSAGE OR PASSWORD IS MISSING";
 		}
 		
@@ -59,7 +71,7 @@ public class AWK implements Runnable{
 								break;
 			case "REVERSE":		returnMessage = convertToReverseString(message);
 								break;
-			case "SHUTDOWN":						
+			case "SHUTDOWN":	
 			default: 			returnMessage = "ERROR UNKNOWN COMMAND";
 								break;
 		}
