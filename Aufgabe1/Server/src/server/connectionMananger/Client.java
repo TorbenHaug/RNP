@@ -11,7 +11,10 @@ import java.rmi.server.UID;
 import java.util.Date;
 import java.util.Map;
 
+import javax.sound.midi.ControllerEventListener;
+
 import server.adt.NetworkToken;
+import server.controller.Controller;
 import utils.buffer.InputBuffer;
 
 /**
@@ -56,6 +59,7 @@ public class Client implements Runnable{
 			    if (line.length() >= 255 || (char) sign == '\n'){
 			    	buffer.addMessageIntoInput(new NetworkToken(line, clientId, getIP()));
 			    	line = "";
+			    	Controller.setUsed();
 			    }
 			}
 			

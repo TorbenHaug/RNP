@@ -60,4 +60,7 @@ public class ConnectionManager {
 			serverMap.remove(serverId);
 		}
 	}
+	public void stop(){
+		
+	}
 }
