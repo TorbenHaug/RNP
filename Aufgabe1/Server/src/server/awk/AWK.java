@@ -56,10 +56,10 @@ public class AWK implements Runnable{
 			return returnMessage = "ERROR SYNTAX ERROR: EMPTY STRING";
 		}
 		
-		if(command.equals("BYE")){
+		if(command.equals("BYE\n")){
 			if(splitString.length == 1){
 				return returnMessage = "OK BYE";
-			}else if(splitString.length > 1){
+			}else {
 				return returnMessage = " ERROR SNTAX ERROR: COMMAND 'BYE' DOES NOT EXPECT PARAMETERS";
 			}
 		}else if (splitString.length < 2){
@@ -104,7 +104,7 @@ public class AWK implements Runnable{
 	private String shutdownServer(String password){
 		boolean bool = Controller.shutdown(password);
 		
-		if(bool == true){
+		if(bool){
 			return "OK SHUTDOWN";
 		}else{
 			return "ERROR SERVER COULD NOT SHUTDOWN PASSWORD WRONG";
