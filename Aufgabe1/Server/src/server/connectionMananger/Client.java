@@ -9,6 +9,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.rmi.server.UID;
 import java.util.Date;
+import java.util.Map;
 
 import server.adt.NetworkToken;
 import utils.buffer.InputBuffer;
@@ -24,11 +25,14 @@ public class Client implements Runnable{
 	private boolean isStopped = false;
 	private final UID clientId;
 	BufferedReader input;
+	private boolean isDown;
+	private final Map<UID, Client> clientMap;
 
-    public Client(Socket clientSocket, InputBuffer<NetworkToken> buffer) {
+    public Client(Socket clientSocket, InputBuffer<NetworkToken> buffer,Map<UID, Client> clientMap) {
         this.clientSocket = clientSocket;
         this.buffer   = buffer;
         this.clientId = new UID();
+        this.clientMap = clientMap;
         try {
 			this.input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), "UTF-8"));
 		} catch (UnsupportedEncodingException e) {
@@ -44,33 +48,29 @@ public class Client implements Runnable{
     	synchronized(this){
             this.runningThread = Thread.currentThread();
         }
-        while(! isStopped()){
-			try {
-				String line = "";
-				int sign = 0;
-				while ((sign = input.read()) != -1) {
-				    line+= (char) sign;
-				    if (line.length() >= 255 || (char) sign == '\n'){
-				    	buffer.addMessageIntoInput(new NetworkToken(line, clientId, getIP()));
-				    	line = "";
-				    }
-				}
-				
-				//input = clientSocket.getInputStream();
-				System.out.println(input.toString());
-			} catch (IOException e1) {
-				System.out.println((new Date()).toString() +  " Client " + clientId + " disconnected");
-				return;
+		try {
+			String line = "";
+			int sign = 0;
+			while ((sign = input.read()) != -1) {
+			    line+= (char) sign;
+			    if (line.length() >= 255 || (char) sign == '\n'){
+			    	buffer.addMessageIntoInput(new NetworkToken(line, clientId, getIP()));
+			    	line = "";
+			    }
 			}
-	        //try {
-	            
-	            //input.close();
-	        //} catch (IOException e) {
-	            //report exception somewhere.
-	           // e.printStackTrace();
-	        //}
-	    }
-        System.out.println((new Date()).toString() +  " Client " + clientId + " disconnected");
+			
+			//input = clientSocket.getInputStream();
+			//System.out.println(input.toString());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			//e.printStackTrace();
+		} finally {
+			stop();
+			clientMap.remove(clientId);
+			isDown = true;
+			System.out.println((new Date()).toString() +  " Client " + clientId + " disconnected");
+		}
+	       
     }
 
 	public String getIP() {
@@ -92,7 +92,8 @@ public class Client implements Runnable{
 			output.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			//e.printStackTrace();
+			
 		}
          
 	}
@@ -104,6 +105,9 @@ public class Client implements Runnable{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	public boolean isDown(){
+		return isDown;
 	}
 }
 

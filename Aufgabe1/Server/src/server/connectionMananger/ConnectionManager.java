@@ -14,6 +14,7 @@ public class ConnectionManager {
 	
 	private final InputBuffer<NetworkToken> buffer;
 	private final ExecutorService executor; // ThreadPool
+	private final AnswerHandler answerHandler;
 	private final Map<UID, Server> serverMap;
 	private final Map<UID, Client> clientMap;
 	
@@ -24,6 +25,8 @@ public class ConnectionManager {
 		this.executor = executor;
 		this.serverMap = new ConcurrentHashMap<>();
 		this.clientMap = new ConcurrentHashMap<>();
+		this.answerHandler = new AnswerHandler(buffer, clientMap);
+		executor.execute(answerHandler);
 	}
 	/**
 	 * 
