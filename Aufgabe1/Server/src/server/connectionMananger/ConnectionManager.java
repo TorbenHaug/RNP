@@ -64,5 +64,8 @@ public class ConnectionManager {
 	}
 	public void stop(){
 		Collection<Client> clients = clientMap.values();
+		for(Client client: clients){
+			client.stop();
+		}
 	}
 }
