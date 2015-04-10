@@ -29,9 +29,21 @@ public class Controller {
 	public static void main(String[] args) {
 		int port = 8070;
 		pwd = "admin";
+		for(int i = 0; i < args.length; i++){
+			if(args[i].equals("-port")){
+				port = Integer.valueOf(args[++i]);
+			}else if(args[i].equals("-pwd")){
+				pwd = args[++i];
+			}
+			else{
+				System.out.println("ERROR unknown command");
+				return;
+			}
+		}
+		
 		executor.execute(awk);
 		
-		serverID = manager.startServer(8071);
+		serverID = manager.startServer(port);
 	}
 	
 	public static boolean shutdown(String pwd){
@@ -46,6 +58,9 @@ public class Controller {
 						while((timeRemaining  = 30 * 1000 - (Calendar.getInstance().getTime().getTime() - lastUse )) > 0){
 							Thread.sleep(timeRemaining);
 						}
+						awk.stop();
+						buffer.stop();
+						manager.stop();
 						
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
