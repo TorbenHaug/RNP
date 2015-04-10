@@ -34,24 +34,30 @@ public class Controller {
 		serverID = manager.startServer(8071);
 	}
 	
-	public static void shutdown(){
-		new Thread(new Runnable() {
-			
-			@Override
-			public void run() {
-				try {
-					manager.stopAllServer();
-					long timeRemaining = 0;
-					while((timeRemaining  = 30 * 1000 - (Calendar.getInstance().getTime().getTime() - lastUse )) > 0){
-						Thread.sleep(timeRemaining);
-					}
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+	public static boolean shutdown(String pwd){
+		if (Controller.pwd.equals(pwd)){
+			new Thread(new Runnable() {
 				
-			}
-		}).start();
+				@Override
+				public void run() {
+					try {
+						manager.stopAllServer();
+						long timeRemaining = 0;
+						while((timeRemaining  = 30 * 1000 - (Calendar.getInstance().getTime().getTime() - lastUse )) > 0){
+							Thread.sleep(timeRemaining);
+						}
+						
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
+				}
+			}).start();
+			return true;
+		}else{
+			return false;
+		}
 	}
 	
 	public static synchronized void setUsed(){
