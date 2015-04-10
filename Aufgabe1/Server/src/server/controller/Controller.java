@@ -7,6 +7,7 @@ import java.util.concurrent.Executors;
 
 import server.adt.NetworkToken;
 import server.awk.AWK;
+import server.connectionMananger.AnswerHandler;
 import server.connectionMananger.ConnectionManager;
 import utils.buffer.BufferImpl;
 
@@ -60,11 +61,9 @@ public class Controller {
 							Thread.sleep(timeRemaining);
 						}
 						awk.stop();
-						buffer.stop();
 						manager.stop();
+						buffer.stop();
 						executor.shutdown();
-						System.out.println(executor.isShutdown());
-						System.out.println(executor.isTerminated());
 						
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block

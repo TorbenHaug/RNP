@@ -30,6 +30,7 @@ public class AWK implements Runnable{
 				buffer.addMessageIntoOutput(new NetworkToken(outputMessage, token.getClientID(), token.getClientIP()));
 			}
 		}
+		System.out.println("AWK Heruntergefahren");
 	}
 	
 	public void stop(){

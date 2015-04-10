@@ -31,6 +31,7 @@ public class AnswerHandler implements Runnable {
 				}
 			}
 		}
+		System.out.println("Answerhandler heruntergefahren");
 		
 	}
 	public void stop(){

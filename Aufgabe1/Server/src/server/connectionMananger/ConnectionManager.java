@@ -68,5 +68,6 @@ public class ConnectionManager {
 			client.stop();
 			
 		}
+		answerHandler.stop();
 	}
 }
