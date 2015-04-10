@@ -52,7 +52,7 @@ public class BufferImpl<E extends Object> implements Buffer<E>{
 					e.printStackTrace();
 				}
 			}
-			E retVal = outQueue.remove();
+			E retVal = outQueue.poll();
 		outQueueReadLock.unlock();
 		return retVal;
 	}
@@ -83,7 +83,7 @@ public class BufferImpl<E extends Object> implements Buffer<E>{
 					e.printStackTrace();
 				}
 			}
-			E retVal = inQueue.remove();
+			E retVal = inQueue.poll();
 		inQueueReadLock.unlock();
 		return retVal;
 	}
@@ -92,8 +92,12 @@ public class BufferImpl<E extends Object> implements Buffer<E>{
 	@Override
 	public void stop() {
 		isStoped = true;
-		inQueueNotEmpty.notifyAll();;
-		outQueueNotEmpty.notifyAll();
+		inQueueReadLock.lock();
+				inQueueNotEmpty.signalAll();
+		inQueueReadLock.unlock();
+		outQueueReadLock.lock();
+			outQueueNotEmpty.signalAll();
+		outQueueReadLock.unlock();
 	}	
 	
 	

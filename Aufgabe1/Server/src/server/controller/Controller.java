@@ -47,20 +47,24 @@ public class Controller {
 	}
 	
 	public static boolean shutdown(String pwd){
-		if (Controller.pwd.equals(pwd)){
-			new Thread(new Runnable() {
+		if ((Controller.pwd + "\n").equals(pwd)){
+			executor.execute(new Runnable() {
 				
 				@Override
 				public void run() {
 					try {
 						manager.stopAllServer();
 						long timeRemaining = 0;
-						while((timeRemaining  = 30 * 1000 - (Calendar.getInstance().getTime().getTime() - lastUse )) > 0){
+						while((timeRemaining  = 5 * 1000 - (Calendar.getInstance().getTime().getTime() - lastUse )) > 0){
+							System.out.println(timeRemaining);
 							Thread.sleep(timeRemaining);
 						}
 						awk.stop();
 						buffer.stop();
 						manager.stop();
+						executor.shutdown();
+						System.out.println(executor.isShutdown());
+						System.out.println(executor.isTerminated());
 						
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
@@ -68,7 +72,7 @@ public class Controller {
 					}
 					
 				}
-			}).start();
+			});
 			return true;
 		}else{
 			return false;

@@ -104,7 +104,8 @@ public class Client implements Runnable{
 	public void stop(){
 		isStopped = true;
 		try {
-			input.close();
+			//input.close();
+			clientSocket.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
