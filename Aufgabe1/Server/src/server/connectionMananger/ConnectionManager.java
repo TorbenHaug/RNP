@@ -2,8 +2,10 @@ package server.connectionMananger;
 
 import java.rmi.server.UID;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
@@ -61,6 +63,6 @@ public class ConnectionManager {
 		}
 	}
 	public void stop(){
-		
+		Collection<Client> clients = clientMap.values();
 	}
 }
