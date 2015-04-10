@@ -1,13 +1,16 @@
 package server.connectionMananger;
 
+import java.io.BufferedReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.rmi.server.UID;
 import java.util.Date;
 
-import server.adt.NetworkTocken;
+import server.adt.NetworkToken;
 import utils.buffer.InputBuffer;
 
 /**
@@ -16,16 +19,25 @@ import utils.buffer.InputBuffer;
 public class Client implements Runnable{
 
     private final Socket clientSocket;
-    private final InputBuffer<NetworkTocken> buffer;
+    private final InputBuffer<NetworkToken> buffer;
 	private Thread runningThread;
 	private boolean isStopped = false;
 	private final UID clientId;
-	InputStream input;
+	BufferedReader input;
 
-    public Client(Socket clientSocket, InputBuffer<NetworkTocken> buffer) {
+    public Client(Socket clientSocket, InputBuffer<NetworkToken> buffer) {
         this.clientSocket = clientSocket;
         this.buffer   = buffer;
         this.clientId = new UID();
+        try {
+			this.input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), "UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 
     public void run() {
@@ -34,18 +46,29 @@ public class Client implements Runnable{
         }
         while(! isStopped()){
 			try {
-				input = clientSocket.getInputStream();
+				String line = "";
+				int sign = 0;
+				while ((sign = input.read()) != -1) {
+				    line+= (char) sign;
+				    if (line.length() >= 255 || (char) sign == '\n'){
+				    	buffer.addMessageIntoInput(new NetworkToken(line, clientId, getIP()));
+				    	line = "";
+				    }
+				}
+				
+				//input = clientSocket.getInputStream();
+				System.out.println(input.toString());
 			} catch (IOException e1) {
 				System.out.println((new Date()).toString() +  " Client " + clientId + " disconnected");
 				return;
 			}
-	        try {
-	            buffer.addMessageIntoInput(new NetworkTocken(input.toString(), clientId, getIP()));
-	            input.close();
-	        } catch (IOException e) {
+	        //try {
+	            
+	            //input.close();
+	        //} catch (IOException e) {
 	            //report exception somewhere.
-	            e.printStackTrace();
-	        }
+	           // e.printStackTrace();
+	        //}
 	    }
         System.out.println((new Date()).toString() +  " Client " + clientId + " disconnected");
     }

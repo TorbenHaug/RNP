@@ -9,7 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import server.adt.NetworkTocken;
+import server.adt.NetworkToken;
 import utils.buffer.InputBuffer;
 
 public class Server implements Runnable{
@@ -20,9 +20,9 @@ public class Server implements Runnable{
     private Thread       runningThread= null;
     private final ExecutorService executor;
     private final Map<UID, Client> clientMap;
-    private final InputBuffer<NetworkTocken> buffer;
+    private final InputBuffer<NetworkToken> buffer;
 
-    public Server(int port, ExecutorService executor, Map<UID, Client> clientMap, InputBuffer<NetworkTocken> buffer){
+    public Server(int port, ExecutorService executor, Map<UID, Client> clientMap, InputBuffer<NetworkToken> buffer){
         this.serverPort = port;
         this.executor = executor;
         this.clientMap = clientMap;

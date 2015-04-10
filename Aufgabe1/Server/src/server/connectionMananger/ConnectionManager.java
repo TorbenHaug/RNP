@@ -7,19 +7,19 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
-import server.adt.NetworkTocken;
+import server.adt.NetworkToken;
 import utils.buffer.InputBuffer;
 
 public class ConnectionManager {
 	
-	private final InputBuffer<NetworkTocken> buffer;
+	private final InputBuffer<NetworkToken> buffer;
 	private final ExecutorService executor; // ThreadPool
 	private final Map<UID, Server> serverMap;
 	private final Map<UID, Client> clientMap;
 	
 
 	
-	public ConnectionManager(InputBuffer<NetworkTocken> buffer, ExecutorService executor) {
+	public ConnectionManager(InputBuffer<NetworkToken> buffer, ExecutorService executor) {
 		this.buffer = buffer;
 		this.executor = executor;
 		this.serverMap = new ConcurrentHashMap<>();
