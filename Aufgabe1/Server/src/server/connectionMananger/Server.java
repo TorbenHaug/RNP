@@ -62,7 +62,7 @@ public class Server implements Runnable{
             	
             }
             else{
-            	Client client = new Client(clientSocket, buffer);
+            	Client client = new Client(clientSocket, buffer,clientMap);
             	clientMap.put(client.getClientId(), client);
                 executor.execute(client);
                 System.out.println((new Date()).toString() + " Client " + client.getClientId() + " IP: " +  client.getIP() + " has connected");

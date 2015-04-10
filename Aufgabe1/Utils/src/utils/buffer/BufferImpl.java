@@ -15,6 +15,7 @@ public class BufferImpl<E extends Object> implements Buffer<E>{
 	private final Lock outQueueReadLock;
 	private final Condition inQueueNotEmpty;
 	private final Condition outQueueNotEmpty;
+	private boolean isStoped = false;
 	
 	public BufferImpl() {
 		this.inQueue = new LinkedList<E>();
@@ -43,7 +44,7 @@ public class BufferImpl<E extends Object> implements Buffer<E>{
 	@Override
 	public E getMessageFromOutput() {
 		outQueueReadLock.lock();
-			while (outQueue.isEmpty()){
+			while (outQueue.isEmpty() && !isStoped){
 				try {
 					outQueueNotEmpty.await();
 				} catch (InterruptedException e) {
@@ -74,7 +75,7 @@ public class BufferImpl<E extends Object> implements Buffer<E>{
 	@Override
 	public E getMessageFromInput() {
 		inQueueReadLock.lock();
-			while (inQueue.isEmpty()){
+			while (inQueue.isEmpty() && !isStoped){
 				try {
 					inQueueNotEmpty.await();
 				} catch (InterruptedException e) {
@@ -85,6 +86,14 @@ public class BufferImpl<E extends Object> implements Buffer<E>{
 			E retVal = inQueue.remove();
 		inQueueReadLock.unlock();
 		return retVal;
+	}
+
+
+	@Override
+	public void stop() {
+		isStoped = true;
+		inQueueNotEmpty.notifyAll();;
+		outQueueNotEmpty.notifyAll();
 	}	
 	
 	
