@@ -24,7 +24,7 @@ public class AnswerHandler implements Runnable {
 				Client client = clientMap.get(token.getClientID());
 				if (client != null){
 					client.sendMessage(token.getMessage());
-					if (token.getMessage().equals("OK BYE")){
+					if (token.getMessage().equals("OK BYE") || token.getMessage().equals("OK SHUTDOWN")){
 						client.stop();
 						clientMap.remove(token.getClientID());
 					}
