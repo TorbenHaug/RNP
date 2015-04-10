@@ -1,6 +1,7 @@
 package server.awk;
 
 import server.adt.NetworkToken;
+import server.controller.Controller;
 import utils.buffer.OutputBuffer;
 
 public class AWK implements Runnable{
@@ -19,17 +20,20 @@ public class AWK implements Runnable{
 	public void run() {
 		while(!isStopped){
 			NetworkToken token = buffer.getMessageFromInput();
-			String inputMessage = token.getMessage();
 			
-			/* execute command */
-			String outputMessage = convertImput(inputMessage);
-			
-			buffer.addMessageIntoOutput(new NetworkToken(outputMessage, token.getClientID(), token.getClientIP()));
+			if(token != null){			
+				String inputMessage = token.getMessage();
+				
+				/* execute command */
+				String outputMessage = convertImput(inputMessage);
+				
+				buffer.addMessageIntoOutput(new NetworkToken(outputMessage, token.getClientID(), token.getClientIP()));
+			}
 		}
 	}
 	
 	public void stop(){
-		
+		isStopped = true;
 	}
 	
 	/**
@@ -71,7 +75,8 @@ public class AWK implements Runnable{
 								break;
 			case "REVERSE":		returnMessage = convertToReverseString(message);
 								break;
-			case "SHUTDOWN":	
+			case "SHUTDOWN":	returnMessage = shutdownServer(message);
+								break;
 			default: 			returnMessage = "ERROR UNKNOWN COMMAND";
 								break;
 		}
@@ -93,6 +98,17 @@ public class AWK implements Runnable{
 	
 	private String convertToReverseString(String text){
 		return new StringBuilder(text).reverse().toString();
+		
+	}
+	
+	private String shutdownServer(String password){
+		boolean bool = Controller.shutdown(password);
+		
+		if(bool == true){
+			return "OK SHUTDOWN";
+		}else{
+			return "ERROR SERVER COULD NOT SHUTDOWN PASSWORD WRONG";
+		}
 		
 	}
 
