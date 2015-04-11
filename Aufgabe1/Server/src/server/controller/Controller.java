@@ -8,14 +8,14 @@ import java.util.concurrent.Executors;
 import utils.adt.NetworkToken;
 import server.awk.AWK;
 import server.connectionMananger.AnswerHandler;
-import server.connectionMananger.ConnectionManager;
+import server.connectionMananger.ServerConnectionManager;
 import utils.buffer.BufferImpl;
 
 public class Controller {
 	private static final BufferImpl<NetworkToken> buffer;
 	private static final ExecutorService executor;
 	private static final AWK awk;
-	private static final ConnectionManager manager;
+	private static final ServerConnectionManager manager;
 	private static UID serverID;
 	private static String pwd;
 	private static long lastUse;
@@ -24,7 +24,7 @@ public class Controller {
 		buffer= new BufferImpl<NetworkToken>();
 		executor = Executors.newCachedThreadPool();
 		awk = new AWK(buffer);
-		manager = new ConnectionManager(buffer, executor);
+		manager = new ServerConnectionManager(buffer, executor);
 		lastUse =Calendar.getInstance().getTime().getTime();
 	}
 	public static void main(String[] args) {

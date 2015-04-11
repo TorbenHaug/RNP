@@ -3,6 +3,7 @@ package client.connectionManager;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -18,23 +19,22 @@ public class Connection implements Runnable{
 	private Socket socket;
 	private UID uid;
 	private boolean isStopped = false;
-	BufferedReader input;
+	private BufferedReader input;
 	private final OutputBuffer<NetworkToken> buffer;
 	private Thread runningThread;
 	private boolean isDown = false;
 	private final Map<UID, Connection> connectionMap;
 	
 	public Connection(String adress, int port, OutputBuffer<NetworkToken> buffer, Map<UID, Connection> connectionMap) throws UnknownHostException, IOException {
-		try {
-			socket = new Socket(adress, port);
-		} catch (UnknownHostException e) {
-			throw e;
-		} catch (IOException e) {
-			throw e;
-		}
+		this.socket = new Socket(adress, port);
 		this.uid = new UID();
 		this.buffer = buffer;
 		this.connectionMap = connectionMap;
+		try {
+			this.input = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
+		} catch (IOException e) {
+			stop();
+		}
 	}
 	
 	public UID getConnectionUID(){
@@ -62,7 +62,7 @@ public class Connection implements Runnable{
 				//System.out.println(input.toString());
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
-				//e.printStackTrace();
+				e.printStackTrace();
 			} finally {
 				stop();
 				connectionMap.remove(uid);
@@ -92,10 +92,11 @@ public class Connection implements Runnable{
 	}
 	public synchronized void sendMessage(String message){
 		OutputStream output;
+		message += "\n";
 		try {
 			output = socket.getOutputStream();
 			output.write(message.getBytes("UTF-8"));
-			output.close();
+			//output.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			//e.printStackTrace();

@@ -12,14 +12,14 @@ import utils.adt.NetworkToken;
 import utils.buffer.InputBuffer;
 import utils.buffer.OutputBuffer;
 
-public class ConnectionManager {
+public class ClientConnectionManager {
 	
 	private OutputBuffer<NetworkToken> buffer;
 	private ExecutorService executor;
 	private Map<UID, Connection> connectionMap;
 	private ClientAnswerHandler answerHandler;
 
-	public ConnectionManager(OutputBuffer<NetworkToken> buffer, ExecutorService executor) {
+	public ClientConnectionManager(OutputBuffer<NetworkToken> buffer, ExecutorService executor) {
 		this.buffer = buffer;
 		this.executor = executor;
 		this.connectionMap = new ConcurrentHashMap<>();
@@ -41,5 +41,9 @@ public class ConnectionManager {
 		for(UID uid: uids){
 			stopConnection(uid);
 		}
+	}
+	public void stop(){
+		stopAllConnections();
+		answerHandler.stop();
 	}
 }

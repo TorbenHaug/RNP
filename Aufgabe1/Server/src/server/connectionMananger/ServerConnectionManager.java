@@ -12,7 +12,7 @@ import java.util.concurrent.ExecutorService;
 import utils.adt.NetworkToken;
 import utils.buffer.InputBuffer;
 
-public class ConnectionManager {
+public class ServerConnectionManager {
 	
 	private final InputBuffer<NetworkToken> buffer;
 	private final ExecutorService executor; // ThreadPool
@@ -22,7 +22,7 @@ public class ConnectionManager {
 	
 
 	
-	public ConnectionManager(InputBuffer<NetworkToken> buffer, ExecutorService executor) {
+	public ServerConnectionManager(InputBuffer<NetworkToken> buffer, ExecutorService executor) {
 		this.buffer = buffer;
 		this.executor = executor;
 		this.serverMap = new ConcurrentHashMap<>();

@@ -23,7 +23,7 @@ public class AWK implements Runnable{
 			
 			if(token != null){			
 				String inputMessage = token.getMessage();
-				
+				System.out.print(token.getID().toString() + " " + inputMessage);
 				/* execute command */
 				String outputMessage = convertImput(inputMessage);
 				

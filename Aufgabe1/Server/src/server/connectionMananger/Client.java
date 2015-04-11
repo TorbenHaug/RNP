@@ -85,11 +85,12 @@ public class Client implements Runnable{
 		return clientId;
 	}
 	public synchronized void sendMessage(String message){
+		message += "\n";
 		OutputStream output;
 		try {
 			output = clientSocket.getOutputStream();
 			output.write(message.getBytes("UTF-8"));
-			output.close();
+			//output.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			//e.printStackTrace();
