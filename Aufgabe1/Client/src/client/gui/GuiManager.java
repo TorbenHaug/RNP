@@ -21,7 +21,9 @@ public class GuiManager{
 		
 	}
 	public void stop(){
+		System.out.println("GIUInput Herunterfahren");
 		guiInput.stop();
+		System.out.println("GIUOutPut Herunterfahren");
 		guiOutput.stop();
 	}
 }

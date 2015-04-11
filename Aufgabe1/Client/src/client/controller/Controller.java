@@ -29,14 +29,27 @@ public class Controller {
 		gui = new GuiManager(buffer, executor);
 	}
 	public static void shutdown(){
-		if(!isShuttingDown){
-			isShuttingDown = true;
-			executor.shutdown();
-			manager.stop();
-			if (gui != null)
-				gui.stop();
-			buffer.stop();
-		}
+		executor.execute(new Runnable() {
+			
+			@Override
+			public void run() {
+				if(!isShuttingDown){
+					isShuttingDown = true;
+					
+					
+					System.out.println("ConnectionManager Herunterfahren");
+					manager.stop();
+					if (gui != null){
+						System.out.println("GUI Herunterfahren");
+						gui.stop();
+					}
+					System.out.println("Buffer anhalten");
+					buffer.stop();
+					System.out.println("ThreadPool Herunterfahren");
+					executor.shutdown();
+				}
+			}
+		});
 	}
 	public static UID connect(String adress, int port) throws UnknownHostException, IOException{
 		return manager.connect(adress, port);

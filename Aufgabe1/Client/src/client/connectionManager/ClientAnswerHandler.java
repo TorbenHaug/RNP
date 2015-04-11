@@ -27,6 +27,9 @@ public class ClientAnswerHandler implements Runnable {
 					client.sendMessage(token.getMessage());
 				}
 			}
+			else{
+				break;
+			}
 		}
 		System.out.println("Answerhandler heruntergefahren");
 		

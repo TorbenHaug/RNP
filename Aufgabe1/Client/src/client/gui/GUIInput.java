@@ -1,5 +1,8 @@
 package client.gui;
 
+import java.awt.AWTException;
+import java.awt.Robot;
+import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -30,34 +33,36 @@ public class GUIInput implements Runnable{
 			} catch (IOException e) {
 				Controller.shutdown();
 			}
-			String splitedCmd[] = cmd.split("\\s+");
-			if(splitedCmd[0].equals("CONNECT") && connection == null){
-				if(splitedCmd.length == 3){
-					try {
-						connection = Controller.connect(splitedCmd[1], Integer.valueOf(splitedCmd[2]));
-					} catch (NumberFormatException e) {
-						System.out.println("ERROR Please enter a correct port");
-					} catch (UnknownHostException e) {
-						System.out.println("ERROR Unknown host");
-					} catch (IOException e) {
-						System.out.println("ERROR Unknown host");
+			if(cmd != null && !isStopped){
+				String splitedCmd[] = cmd.split("\\s+");
+				if(splitedCmd[0].equals("CONNECT") && connection == null){
+					if(splitedCmd.length == 3){
+						try {
+							connection = Controller.connect(splitedCmd[1], Integer.valueOf(splitedCmd[2]));
+						} catch (NumberFormatException e) {
+							System.out.println("ERROR Please enter a correct port");
+						} catch (UnknownHostException e) {
+							System.out.println("ERROR Unknown host");
+						} catch (IOException e) {
+							System.out.println("ERROR Unknown host");
+						}
 					}
-				}
-				else{
-					System.out.println("ERROR Please use CONNECT <Adress> <Port>");
-				}
-			}else{
-				if(connection != null){
-					buffer.addMessageIntoInput(new NetworkToken(cmd, connection, "127.0.0.1"));
-				}else{
-					if(cmd.equals("BYE")){
-						Controller.shutdown();
-					}else{
+					else{
 						System.out.println("ERROR Please use CONNECT <Adress> <Port>");
+					}
+				}else{
+					if(connection != null){
+						buffer.addMessageIntoInput(new NetworkToken(cmd, connection, "127.0.0.1"));
+					}else{
+						if(cmd.equals("BYE")){
+							Controller.shutdown();
+							stop();
+						}else{
+							System.out.println("ERROR Please use CONNECT <Adress> <Port>");
+						}
 					}
 				}
 			}
-			
 		}
 		System.out.println("Ausgabe gestoppt");
 		
@@ -65,11 +70,21 @@ public class GUIInput implements Runnable{
 	
 	public void stop(){
 		isStopped = true;
+		Robot r;
 		try {
-			br.close();
+			r = new Robot();
+			r.keyPress(KeyEvent.VK_ENTER);
+			r.keyRelease(KeyEvent.VK_ENTER);
+		} catch (AWTException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		try {
+			System.in.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			//e.printStackTrace();
+			e.printStackTrace();
 		}
 	}
 }
