@@ -62,7 +62,7 @@ public class Connection implements Runnable{
 				//System.out.println(input.toString());
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				//e.printStackTrace();
 			} finally {
 				stop();
 				connectionMap.remove(uid);
