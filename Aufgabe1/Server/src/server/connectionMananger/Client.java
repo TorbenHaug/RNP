@@ -52,7 +52,14 @@ public class Client implements Runnable{
 			int sign = 0;
 			while (((sign = input.read()) != -1) && !isStopped) {
 			    line+= (char) sign;
-			    if (line.length() >= 255 || (char) sign == '\n'){
+			    if (line.length() >= 255){
+			    	sendMessage("ERROR Message too long");
+			    	while (((sign = input.read()) != -1) && (((char) sign) != '\n') && !isStopped){
+			    		
+			    	}
+			    	line = "";
+			    }
+			    else if ((char) sign == '\n'){
 			    	buffer.addMessageIntoInput(new NetworkToken(line, clientId, getIP()));
 			    	line = "";
 			    	Controller.setUsed();

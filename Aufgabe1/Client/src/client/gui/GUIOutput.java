@@ -21,7 +21,7 @@ public class GUIOutput implements Runnable{
 				String msg = token.getMessage();
 				System.out.print(msg);
 				if(msg.equals("OK BYE\n") || msg.equals("OK SHUTDOWN\n")){
-					Controller.shutdown();
+					Controller.disconnectCurrentConnection();;
 				}
 			}
 		}

@@ -51,10 +51,12 @@ public class GUIInput implements Runnable{
 						System.out.println("ERROR Please use CONNECT <Adress> <Port>");
 					}
 				}else{
-					if(connection != null){
+					if(connection != null && !cmd.equals("EXIT")){
 						buffer.addMessageIntoInput(new NetworkToken(cmd, connection, "127.0.0.1"));
+					}else if(connection != null && cmd.equals("EXIT")){
+						System.out.println("ERROR Please disconnect from server befor exiting client");
 					}else{
-						if(cmd.equals("BYE")){
+						if(cmd.equals("EXIT")){
 							Controller.shutdown();
 							stop();
 						}else{
@@ -70,7 +72,7 @@ public class GUIInput implements Runnable{
 	
 	public void stop(){
 		isStopped = true;
-		Robot r;
+		/*Robot r;
 		try {
 			r = new Robot();
 			r.keyPress(KeyEvent.VK_ENTER);
@@ -85,6 +87,10 @@ public class GUIInput implements Runnable{
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
+		}*/
+	}
+	public void connectionStopped(UID currentConnection) {
+		connection = null;
+		
 	}
 }

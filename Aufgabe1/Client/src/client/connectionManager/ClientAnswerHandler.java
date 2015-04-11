@@ -21,7 +21,7 @@ public class ClientAnswerHandler implements Runnable {
 	public void run() {
 		while(!isStoped){
 			NetworkToken token = buffer.getMessageFromInput();
-			if(token != null){
+			if(token != null && !isStoped){
 				Connection client = connectionMap.get(token.getID());
 				if (client != null){
 					client.sendMessage(token.getMessage());

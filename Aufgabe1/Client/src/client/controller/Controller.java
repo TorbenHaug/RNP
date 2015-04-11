@@ -19,6 +19,7 @@ public class Controller {
 	private static final ExecutorService executor;
 	private static GuiManager gui;
 	private static boolean isShuttingDown;
+	private static UID currentConnection = null;
 	static{
 		buffer = new BufferImpl<>();
 		executor = Executors.newCachedThreadPool();
@@ -29,13 +30,12 @@ public class Controller {
 		gui = new GuiManager(buffer, executor);
 	}
 	public static void shutdown(){
-		executor.execute(new Runnable() {
-			
-			@Override
-			public void run() {
-				if(!isShuttingDown){
-					isShuttingDown = true;
-					
+		if(!isShuttingDown){
+			isShuttingDown = true;
+			executor.execute(new Runnable() {
+				
+				@Override
+				public void run() {
 					
 					System.out.println("ConnectionManager Herunterfahren");
 					manager.stop();
@@ -48,10 +48,15 @@ public class Controller {
 					System.out.println("ThreadPool Herunterfahren");
 					executor.shutdown();
 				}
-			}
-		});
+			});
+		}
 	}
 	public static UID connect(String adress, int port) throws UnknownHostException, IOException{
-		return manager.connect(adress, port);
+		currentConnection = manager.connect(adress, port);
+		return currentConnection;
+	}
+	public static void disconnectCurrentConnection(){
+		manager.stopConnection(currentConnection);
+		gui.connectionStopped(currentConnection);
 	}
 }

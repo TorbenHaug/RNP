@@ -52,10 +52,14 @@ public class Connection implements Runnable{
 				int sign = 0;
 				while (((sign = input.read()) != -1) && !isStopped) {
 				    line+= (char) sign;
-				    if (line.length() >= 255 || (char) sign == '\n'){
+				    if (line.length() >= 255){
+				    	System.out.println("ERROR Server sendet zu viele Daten, disconnect");
+				    	Controller.disconnectCurrentConnection();
+				    }else if((char) sign == '\n'){
 				    	buffer.addMessageIntoOutput(new NetworkToken(line, uid, getIP()));
 				    	line = "";
 				    }
+			    	
 				}
 				
 				//input = clientSocket.getInputStream();

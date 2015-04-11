@@ -1,5 +1,6 @@
 package client.gui;
 
+import java.rmi.server.UID;
 import java.util.concurrent.ExecutorService;
 
 import utils.adt.NetworkToken;
@@ -25,5 +26,9 @@ public class GuiManager{
 		guiInput.stop();
 		System.out.println("GIUOutPut Herunterfahren");
 		guiOutput.stop();
+	}
+	public void connectionStopped(UID currentConnection) {
+		guiInput.connectionStopped(currentConnection);
+		
 	}
 }

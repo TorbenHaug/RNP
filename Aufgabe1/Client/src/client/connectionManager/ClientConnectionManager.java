@@ -32,9 +32,10 @@ public class ClientConnectionManager {
 		connectionMap.put(connection.getUid(), connection);
 		return connection.getUid();
 	}
-	public void stopConnection(UID uid){
+	public synchronized void stopConnection(UID uid){
 		Connection connection = connectionMap.get(uid);
-		connection.stop();
+		if(connection != null)
+			connection.stop();
 	}
 	public void stopAllConnections(){
 		Collection<UID> uids = connectionMap.keySet();
