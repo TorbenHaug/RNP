@@ -1,7 +1,7 @@
 package server.awk;
 
-import server.adt.NetworkToken;
 import server.controller.Controller;
+import utils.adt.NetworkToken;
 import utils.buffer.OutputBuffer;
 
 public class AWK implements Runnable{
@@ -27,7 +27,7 @@ public class AWK implements Runnable{
 				/* execute command */
 				String outputMessage = convertImput(inputMessage);
 				
-				buffer.addMessageIntoOutput(new NetworkToken(outputMessage, token.getClientID(), token.getClientIP()));
+				buffer.addMessageIntoOutput(new NetworkToken(outputMessage, token.getID(), token.getIP()));
 			}
 		}
 		System.out.println("AWK Heruntergefahren");

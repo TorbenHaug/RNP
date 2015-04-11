@@ -13,7 +13,7 @@ import java.util.Map;
 
 import javax.sound.midi.ControllerEventListener;
 
-import server.adt.NetworkToken;
+import utils.adt.NetworkToken;
 import server.controller.Controller;
 import utils.buffer.InputBuffer;
 
@@ -27,7 +27,7 @@ public class Client implements Runnable{
 	private Thread runningThread;
 	private boolean isStopped = false;
 	private final UID clientId;
-	BufferedReader input;
+	private BufferedReader input;
 	private boolean isDown;
 	private final Map<UID, Client> clientMap;
 
@@ -38,12 +38,8 @@ public class Client implements Runnable{
         this.clientMap = clientMap;
         try {
 			this.input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), "UTF-8"));
-		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			stop();
 		}
     }
 
@@ -54,7 +50,7 @@ public class Client implements Runnable{
 		try {
 			String line = "";
 			int sign = 0;
-			while ((sign = input.read()) != -1) {
+			while (((sign = input.read()) != -1) && !isStopped) {
 			    line+= (char) sign;
 			    if (line.length() >= 255 || (char) sign == '\n'){
 			    	buffer.addMessageIntoInput(new NetworkToken(line, clientId, getIP()));
@@ -92,7 +88,7 @@ public class Client implements Runnable{
 		OutputStream output;
 		try {
 			output = clientSocket.getOutputStream();
-			output.write(message.getBytes());
+			output.write(message.getBytes("UTF-8"));
 			output.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

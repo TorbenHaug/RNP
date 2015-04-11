@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
-import server.adt.NetworkToken;
+import utils.adt.NetworkToken;
 import utils.buffer.InputBuffer;
 
 public class ConnectionManager {

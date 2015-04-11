@@ -3,7 +3,7 @@ package server.connectionMananger;
 import java.rmi.server.UID;
 import java.util.Map;
 
-import server.adt.NetworkToken;
+import utils.adt.NetworkToken;
 import sun.rmi.runtime.NewThreadAction;
 import utils.buffer.InputBuffer;
 
@@ -21,12 +21,12 @@ public class AnswerHandler implements Runnable {
 		while(!isStoped){
 			NetworkToken token = buffer.getMessageFromOutput();
 			if(token != null){
-				Client client = clientMap.get(token.getClientID());
+				Client client = clientMap.get(token.getID());
 				if (client != null){
 					client.sendMessage(token.getMessage());
 					if (token.getMessage().equals("OK BYE") || token.getMessage().equals("OK SHUTDOWN")){
 						client.stop();
-						clientMap.remove(token.getClientID());
+						clientMap.remove(token.getID());
 					}
 				}
 			}

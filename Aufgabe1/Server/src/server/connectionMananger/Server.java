@@ -9,7 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import server.adt.NetworkToken;
+import utils.adt.NetworkToken;
 import utils.buffer.InputBuffer;
 
 public class Server implements Runnable{

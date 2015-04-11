@@ -5,7 +5,7 @@ import java.util.Calendar;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import server.adt.NetworkToken;
+import utils.adt.NetworkToken;
 import server.awk.AWK;
 import server.connectionMananger.AnswerHandler;
 import server.connectionMananger.ConnectionManager;
@@ -56,7 +56,7 @@ public class Controller {
 					try {
 						manager.stopAllServer();
 						long timeRemaining = 0;
-						while((timeRemaining  = 5 * 1000 - (Calendar.getInstance().getTime().getTime() - lastUse )) > 0){
+						while((timeRemaining  = 30 * 1000 - (Calendar.getInstance().getTime().getTime() - lastUse )) > 0){
 							System.out.println(timeRemaining);
 							Thread.sleep(timeRemaining);
 						}
