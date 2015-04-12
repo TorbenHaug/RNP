@@ -7,12 +7,12 @@ import utils.adt.NetworkToken;
 import sun.rmi.runtime.NewThreadAction;
 import utils.buffer.InputBuffer;
 
-public class AnswerHandler implements Runnable {
+public class ServerAnswerHandler implements Runnable {
 	private boolean isStoped = false;
 	private final InputBuffer<NetworkToken> buffer;
-	private final Map<UID, Client> clientMap;
+	private final Map<UID, ClientConnectionDokument> clientMap;
 	
-	public AnswerHandler(InputBuffer<NetworkToken> buffer,Map<UID, Client> clientMap) {
+	public ServerAnswerHandler(InputBuffer<NetworkToken> buffer,Map<UID, ClientConnectionDokument> clientMap) {
 		this.buffer = buffer;
 		this.clientMap = clientMap;
 	}
@@ -21,7 +21,7 @@ public class AnswerHandler implements Runnable {
 		while(!isStoped){
 			NetworkToken token = buffer.getMessageFromOutput();
 			if(token != null){
-				Client client = clientMap.get(token.getID());
+				ClientConnectionDokument client = clientMap.get(token.getID());
 				if (client != null){
 					client.sendMessage(token.getMessage());
 					if (token.getMessage().equals("OK BYE") || token.getMessage().equals("OK SHUTDOWN")){

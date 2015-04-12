@@ -16,9 +16,9 @@ public class ServerConnectionManager {
 	
 	private final InputBuffer<NetworkToken> buffer;
 	private final ExecutorService executor; // ThreadPool
-	private final AnswerHandler answerHandler;
+	private final ServerAnswerHandler answerHandler;
 	private final Map<UID, Server> serverMap;
-	private final Map<UID, Client> clientMap;
+	private final Map<UID, ClientConnectionDokument> clientMap;
 	
 
 	
@@ -27,7 +27,7 @@ public class ServerConnectionManager {
 		this.executor = executor;
 		this.serverMap = new ConcurrentHashMap<>();
 		this.clientMap = new ConcurrentHashMap<>();
-		this.answerHandler = new AnswerHandler(buffer, clientMap);
+		this.answerHandler = new ServerAnswerHandler(buffer, clientMap);
 		executor.execute(answerHandler);
 	}
 	/**
@@ -63,8 +63,8 @@ public class ServerConnectionManager {
 		}
 	}
 	public void stop(){
-		Collection<Client> clients = clientMap.values();
-		for(Client client: clients){
+		Collection<ClientConnectionDokument> clients = clientMap.values();
+		for(ClientConnectionDokument client: clients){
 			client.stop();
 			
 		}

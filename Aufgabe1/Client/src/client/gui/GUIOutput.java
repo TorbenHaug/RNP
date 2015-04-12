@@ -1,6 +1,6 @@
 package client.gui;
 
-import client.controller.Controller;
+import client.controller.ClientController;
 import utils.adt.NetworkToken;
 import utils.buffer.InputBuffer;
 
@@ -21,9 +21,9 @@ public class GUIOutput implements Runnable{
 			if(token != null){
 				String msg = token.getMessage();
 				System.out.print(msg);
-//				if(msg.matches("OK BYE( |.)*\n")|| msg.equals("OK SHUTDOWN\n")){
 				if(msg.equals("OK BYE\n")|| msg.equals("OK SHUTDOWN\n")){
-					Controller.disconnectCurrentConnection();;
+					ClientController.disconnectCurrentConnection();
+					System.out.println("Use CONNECT <address> <port> to reconnect");
 				}
 			}
 		}

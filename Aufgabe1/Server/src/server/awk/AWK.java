@@ -1,6 +1,6 @@
 package server.awk;
 
-import server.controller.Controller;
+import server.controller.ServerController;
 import utils.adt.NetworkToken;
 import utils.buffer.OutputBuffer;
 
@@ -65,7 +65,6 @@ public class AWK implements Runnable{
 		 *    command == BYE && argument input*/
 		if(command.equals("BYE\n")){
 			if(splitString.length == 1){
-//				return returnMessage = "OK BYE use CONNECT <address> <port> to reconnect";
 				return returnMessage = "OK BYE";
 			}else {
 				return returnMessage = " ERROR SNTAX ERROR: COMMAND 'BYE' DOES NOT EXPECT PARAMETERS";
@@ -84,8 +83,6 @@ public class AWK implements Runnable{
 			case "REVERSE":		returnMessage = convertToReverseString(message);
 								break;
 			case "SHUTDOWN":	returnMessage = shutdownServer(message);
-								break;
-			case "CONNECT":		returnMessage = "ERROR ALREADY CONNECTED";
 								break;
 			default: 			returnMessage = "ERROR UNKNOWN COMMAND";
 								break;
@@ -112,7 +109,7 @@ public class AWK implements Runnable{
 	}
 	
 	private String shutdownServer(String password){
-		boolean bool = Controller.shutdown(password);
+		boolean bool = ServerController.shutdown(password);
 		
 		if(bool){
 			return "OK SHUTDOWN";

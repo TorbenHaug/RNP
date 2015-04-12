@@ -7,11 +7,11 @@ import java.util.concurrent.Executors;
 
 import utils.adt.NetworkToken;
 import server.awk.AWK;
-import server.connectionMananger.AnswerHandler;
+import server.connectionMananger.ServerAnswerHandler;
 import server.connectionMananger.ServerConnectionManager;
 import utils.buffer.BufferImpl;
 
-public class Controller {
+public class ServerController {
 	private static final BufferImpl<NetworkToken> buffer;
 	private static final ExecutorService executor;
 	private static final AWK awk;
@@ -30,23 +30,29 @@ public class Controller {
 	public static void main(String[] args) {
 		int port = 8070;
 		pwd = "admin";
-		for(int i = 0; i < args.length; i++){
-			if((i + 1) < args.length) {							//i+1 is not allowed to be the length of array --> ArrayOutOfBounce
-				if(args[i].equals("-port")){					// if user gives port
+		if((args.length % 2) == 0){
+			for(int i = 0; i < args.length; i++){						//i+1 is not allowed to be the length of array --> ArrayOutOfBounce
+				if(args[i].equals("-port")){					
 					String nextArgument = args[++i];
-					if(!nextArgument.equals("-pwd")){
+					try{
 						port = Integer.valueOf(nextArgument);
+					}catch(NumberFormatException e){
+						System.out.println("ERROR PARAMETER PORT ERROR");
+						System.exit(-1);
 					}
-				}else if(args[i].equals("-pwd")){				//if user gives password
+					
+				}else if(args[i].equals("-pwd")){	
 					pwd = args[++i];
 				}
 				else{
 					System.out.println("ERROR unknown command");
-					return;
+					System.exit(-1);
 				}
-			}else{
-				System.out.println("Port: " + port + " Pwd: " + pwd);  // if neither port and password nor one of them are given
+				
 			}
+		}else{
+			System.out.println("ERROR PARAMETER ERROR");
+			System.exit(-1);
 		}
 		
 		executor.execute(awk);
@@ -55,7 +61,7 @@ public class Controller {
 	}
 	
 	public static boolean shutdown(String pwd){
-		if ((Controller.pwd + "\n").equals(pwd)){
+		if ((ServerController.pwd + "\n").equals(pwd)){
 			executor.execute(new Runnable() {
 				
 				@Override

@@ -14,13 +14,13 @@ import java.util.Map;
 import javax.sound.midi.ControllerEventListener;
 
 import utils.adt.NetworkToken;
-import server.controller.Controller;
+import server.controller.ServerController;
 import utils.buffer.InputBuffer;
 
 /**
 
  */
-public class Client implements Runnable{
+public class ClientConnectionDokument implements Runnable{
 
     private final Socket clientSocket;
     private final InputBuffer<NetworkToken> buffer;
@@ -29,9 +29,9 @@ public class Client implements Runnable{
 	private final UID clientId;
 	private BufferedReader input;
 	private boolean isDown;
-	private final Map<UID, Client> clientMap;
+	private final Map<UID, ClientConnectionDokument> clientMap;
 
-    public Client(Socket clientSocket, InputBuffer<NetworkToken> buffer,Map<UID, Client> clientMap) {
+    public ClientConnectionDokument(Socket clientSocket, InputBuffer<NetworkToken> buffer,Map<UID, ClientConnectionDokument> clientMap) {
         this.clientSocket = clientSocket;
         this.buffer   = buffer;
         this.clientId = new UID();
@@ -62,7 +62,7 @@ public class Client implements Runnable{
 			    else if ((char) sign == '\n'){
 			    	buffer.addMessageIntoInput(new NetworkToken(line, clientId, getIP()));
 			    	line = "";
-			    	Controller.setUsed();
+			    	ServerController.setUsed();
 			    }
 			}
 			

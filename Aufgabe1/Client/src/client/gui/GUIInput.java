@@ -9,7 +9,7 @@ import java.io.InputStreamReader;
 import java.net.UnknownHostException;
 import java.rmi.server.UID;
 
-import client.controller.Controller;
+import client.controller.ClientController;
 import utils.adt.NetworkToken;
 import utils.buffer.InputBuffer;
 
@@ -31,14 +31,14 @@ public class GUIInput implements Runnable{
 			try {
 				cmd = br.readLine();
 			} catch (IOException e) {
-				Controller.shutdown();
+				ClientController.shutdown();
 			}
 			if(cmd != null && !isStopped){
 				String splitedCmd[] = cmd.split("\\s+");
 				if(splitedCmd[0].equals("CONNECT") && connection == null){
 					if(splitedCmd.length == 3){
 						try {
-							connection = Controller.connect(splitedCmd[1], Integer.valueOf(splitedCmd[2]));
+							connection = ClientController.connect(splitedCmd[1], Integer.valueOf(splitedCmd[2]));
 						} catch (NumberFormatException e) {
 							System.out.println("ERROR Please enter a correct port");
 						} catch (UnknownHostException e) {
@@ -50,6 +50,8 @@ public class GUIInput implements Runnable{
 					else{
 						System.out.println("ERROR Please use CONNECT <Adress> <Port>");
 					}
+				}else if(splitedCmd[0].equals("CONNECT") && connection != null){
+					System.out.println("ERROR ALREADY CONNECTED");
 				}else{
 					if(connection != null && !cmd.equals("EXIT")){
 						buffer.addMessageIntoInput(new NetworkToken(cmd, connection, "127.0.0.1"));
@@ -57,7 +59,7 @@ public class GUIInput implements Runnable{
 						System.out.println("ERROR Please disconnect from server befor exiting client");
 					}else{
 						if(cmd.equals("EXIT")){
-							Controller.shutdown();
+							ClientController.shutdown();
 							stop();
 						}else{
 							System.out.println("ERROR Please use CONNECT <Adress> <Port>");
@@ -72,22 +74,6 @@ public class GUIInput implements Runnable{
 	
 	public void stop(){
 		isStopped = true;
-		/*Robot r;
-		try {
-			r = new Robot();
-			r.keyPress(KeyEvent.VK_ENTER);
-			r.keyRelease(KeyEvent.VK_ENTER);
-		} catch (AWTException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
-		try {
-			System.in.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
 	}
 	public void connectionStopped(UID currentConnection) {
 		connection = null;

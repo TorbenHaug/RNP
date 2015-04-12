@@ -19,10 +19,10 @@ public class Server implements Runnable{
     private boolean      isStopped    = false;
     private Thread       runningThread= null;
     private final ExecutorService executor;
-    private final Map<UID, Client> clientMap;
+    private final Map<UID, ClientConnectionDokument> clientMap;
     private final InputBuffer<NetworkToken> buffer;
 
-    public Server(int port, ExecutorService executor, Map<UID, Client> clientMap, InputBuffer<NetworkToken> buffer){
+    public Server(int port, ExecutorService executor, Map<UID, ClientConnectionDokument> clientMap, InputBuffer<NetworkToken> buffer){
         this.serverPort = port;
         this.executor = executor;
         this.clientMap = clientMap;
@@ -54,15 +54,21 @@ public class Server implements Runnable{
 	            	output.close();
 	            	System.out.println((new Date()).toString() + " Client from " + clientSocket.getInetAddress().getHostAddress() + 
 	            			" refused, because ther are too many clients");
-	            	clientSocket.close();
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
+				}finally{
+					try {
+						clientSocket.close();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+//						e.printStackTrace();
+					}
 				}
             	
             }
             else{
-            	Client client = new Client(clientSocket, buffer,clientMap);
+            	ClientConnectionDokument client = new ClientConnectionDokument(clientSocket, buffer,clientMap);
             	clientMap.put(client.getClientId(), client);
                 executor.execute(client);
                 System.out.println((new Date()).toString() + " Client " + client.getClientId() + " IP: " +  client.getIP() + " has connected");
@@ -89,7 +95,8 @@ public class Server implements Runnable{
         try {
             this.serverSocket = new ServerSocket(serverPort);
         } catch (IOException e) {
-            throw new RuntimeException("Cannot open port " + serverPort, e);
+            System.out.println("Cannot open port " + serverPort);
+            System.exit(-1);
         }
         System.out.println((new Date()).toString() + " Server listening to port " + serverPort);
     }

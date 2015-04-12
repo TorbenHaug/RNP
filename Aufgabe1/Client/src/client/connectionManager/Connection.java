@@ -11,7 +11,7 @@ import java.rmi.server.UID;
 import java.util.Date;
 import java.util.Map;
 
-import client.controller.Controller;
+import client.controller.ClientController;
 import utils.adt.NetworkToken;
 import utils.buffer.OutputBuffer;
 
@@ -54,7 +54,7 @@ public class Connection implements Runnable{
 				    line+= (char) sign;
 				    if (line.length() >= 255){
 				    	System.out.println("ERROR Server sendet zu viele Daten, disconnect");
-				    	Controller.disconnectCurrentConnection();
+				    	ClientController.disconnectCurrentConnection();
 				    }else if((char) sign == '\n'){
 				    	buffer.addMessageIntoOutput(new NetworkToken(line, uid, getIP()));
 				    	line = "";
@@ -68,7 +68,8 @@ public class Connection implements Runnable{
 				// TODO Auto-generated catch block
 				//e.printStackTrace();
 			} finally {
-				stop();
+//				stop();
+				ClientController.disconnectCurrentConnection();
 				connectionMap.remove(uid);
 				isDown  = true;
 				System.out.println("Disconnected from Server: " + socket.getRemoteSocketAddress().toString());

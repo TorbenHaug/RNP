@@ -13,7 +13,7 @@ import utils.buffer.OutputBuffer;
 import client.connectionManager.ClientConnectionManager;
 import client.gui.GuiManager;
 
-public class Controller {
+public class ClientController {
 	private final static ClientConnectionManager manager;
 	private static final Buffer<NetworkToken> buffer;
 	private static final ExecutorService executor;
