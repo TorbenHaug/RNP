@@ -31,14 +31,21 @@ public class Controller {
 		int port = 8070;
 		pwd = "admin";
 		for(int i = 0; i < args.length; i++){
-			if(args[i].equals("-port")){
-				port = Integer.valueOf(args[++i]);
-			}else if(args[i].equals("-pwd")){
-				pwd = args[++i];
-			}
-			else{
-				System.out.println("ERROR unknown command");
-				return;
+			if((i + 1) < args.length) {							//i+1 is not allowed to be the length of array --> ArrayOutOfBounce
+				if(args[i].equals("-port")){					// if user gives port
+					String nextArgument = args[++i];
+					if(!nextArgument.equals("-pwd")){
+						port = Integer.valueOf(nextArgument);
+					}
+				}else if(args[i].equals("-pwd")){				//if user gives password
+					pwd = args[++i];
+				}
+				else{
+					System.out.println("ERROR unknown command");
+					return;
+				}
+			}else{
+				System.out.println("Port: " + port + " Pwd: " + pwd);  // if neither port and password nor one of them are given
 			}
 		}
 		

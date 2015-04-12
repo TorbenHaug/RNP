@@ -47,8 +47,9 @@ public class AWK implements Runnable{
 		
 		/* split inputMessage into two parts,
 		 * firstpart: command 
-		 * second: message  */
-		String[] splitString = input.split(" ", 2);
+		   more than one space is allowed to be in the input. 
+		   Possible regex use is also "\\s+" */
+		String[] splitString = input.split(" +", 2); 
 		
 		String command = splitString[0];
 		
@@ -57,14 +58,20 @@ public class AWK implements Runnable{
 			return returnMessage = "ERROR SYNTAX ERROR: EMPTY STRING";
 		}
 		
+		/* Command input BYE
+		 * if input is correct: than client disconnect
+		 * if inout is incorrect because
+		 *    command != BYE 
+		 *    command == BYE && argument input*/
 		if(command.equals("BYE\n")){
 			if(splitString.length == 1){
+//				return returnMessage = "OK BYE use CONNECT <address> <port> to reconnect";
 				return returnMessage = "OK BYE";
 			}else {
 				return returnMessage = " ERROR SNTAX ERROR: COMMAND 'BYE' DOES NOT EXPECT PARAMETERS";
 			}
 		}else if (splitString.length < 2){
-			return returnMessage = "ERROR SYNTAX ERROR: MESSAGE OR PASSWORD IS MISSING";
+				return returnMessage = "ERROR SYNTAX ERROR: UNKNOWN COMMAND OR MESSAGE OR PASSWORD IS MISSING";
 		}
 		
 		String message = splitString[1];
@@ -77,6 +84,8 @@ public class AWK implements Runnable{
 			case "REVERSE":		returnMessage = convertToReverseString(message);
 								break;
 			case "SHUTDOWN":	returnMessage = shutdownServer(message);
+								break;
+			case "CONNECT":		returnMessage = "ERROR ALREADY CONNECTED";
 								break;
 			default: 			returnMessage = "ERROR UNKNOWN COMMAND";
 								break;
