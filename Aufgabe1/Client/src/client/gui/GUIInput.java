@@ -35,7 +35,7 @@ public class GUIInput implements Runnable{
 			}
 			if(cmd != null && !isStopped){
 				String splitedCmd[] = cmd.split("\\s+");
-				if(splitedCmd[0].equals("CONNECT") && connection == null){
+				if(splitedCmd.length > 0 && splitedCmd[0].equals("CONNECT") && connection == null){
 					if(splitedCmd.length == 3){
 						try {
 							connection = ClientController.connect(splitedCmd[1], Integer.valueOf(splitedCmd[2]));
@@ -50,7 +50,7 @@ public class GUIInput implements Runnable{
 					else{
 						System.out.println("ERROR Please use CONNECT <Adress> <Port>");
 					}
-				}else if(splitedCmd[0].equals("CONNECT") && connection != null){
+				}else if(splitedCmd.length > 0 && splitedCmd[0].equals("CONNECT") && connection != null){
 					System.out.println("ERROR ALREADY CONNECTED");
 				}else{
 					if(connection != null && !cmd.equals("EXIT")){

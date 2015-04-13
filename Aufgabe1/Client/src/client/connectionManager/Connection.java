@@ -5,6 +5,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.rmi.server.UID;
@@ -26,7 +27,8 @@ public class Connection implements Runnable{
 	private final Map<UID, Connection> connectionMap;
 	
 	public Connection(String adress, int port, OutputBuffer<NetworkToken> buffer, Map<UID, Connection> connectionMap) throws UnknownHostException, IOException {
-		this.socket = new Socket(adress, port);
+		this.socket = new Socket();
+		socket.connect(new InetSocketAddress(adress, port), 1000);
 		this.uid = new UID();
 		this.buffer = buffer;
 		this.connectionMap = connectionMap;
