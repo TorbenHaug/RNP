@@ -36,6 +36,6 @@ public class MainClass {
 				return "rnp";
 			}
 		});
-		new ClientManager(Executors.newCachedThreadPool(), configs);
+		new ClientManager(Executors.newCachedThreadPool(), configs,5);
 	}
 }

@@ -13,12 +13,14 @@ import utils.buffer.OutputBuffer;
 
 public class ClientConnectionManager {
 	
-	private OutputBuffer<NetworkToken> buffer;
-	private ExecutorService executor;
-	private Map<UID, Connection> connectionMap;
-	private ClientAnswerHandler answerHandler;
+	private final OutputBuffer<NetworkToken> buffer;
+	private final ExecutorService executor;
+	private final Map<UID, Connection> connectionMap;
+	private final ClientAnswerHandler answerHandler;
+	private final int timeOut;
 
-	public ClientConnectionManager(OutputBuffer<NetworkToken> buffer, ExecutorService executor) {
+	public ClientConnectionManager(OutputBuffer<NetworkToken> buffer, ExecutorService executor, int timeOut) {
+		this.timeOut = timeOut*1000;
 		this.buffer = buffer;
 		this.executor = executor;
 		this.connectionMap = new ConcurrentHashMap<>();
@@ -26,7 +28,7 @@ public class ClientConnectionManager {
 		executor.execute(answerHandler);
 	}
 	public UID connect(String adress, int port) throws UnknownHostException, IOException{
-		Connection connection = new Connection(adress, port, buffer, connectionMap);
+		Connection connection = new Connection(adress, port, buffer, connectionMap, timeOut);
 		executor.execute(connection);
 		connectionMap.put(connection.getUid(), connection);
 		return connection.getUid();

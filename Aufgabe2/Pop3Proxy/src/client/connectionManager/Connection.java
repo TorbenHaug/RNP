@@ -6,9 +6,11 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.rmi.server.UID;
 import java.util.Map;
+
 import utils.adt.NetworkToken;
 import utils.buffer.OutputBuffer;
 
@@ -22,9 +24,13 @@ public class Connection implements Runnable{
 	private boolean isDown = false;
 	private final Map<UID, Connection> connectionMap;
 	
-	public Connection(String adress, int port, OutputBuffer<NetworkToken> buffer, Map<UID, Connection> connectionMap) throws UnknownHostException, IOException {
+	public Connection(String adress, int port, OutputBuffer<NetworkToken> buffer, Map<UID, Connection> connectionMap, int timeOut) throws UnknownHostException, IOException {
 		this.socket = new Socket();
-		socket.connect(new InetSocketAddress(adress, port));
+		try{
+			socket.connect(new InetSocketAddress(adress, port), timeOut);
+		}catch(SocketTimeoutException e){
+			stop();
+		}
 		this.uid = new UID();
 		this.buffer = buffer;
 		this.connectionMap = connectionMap;
