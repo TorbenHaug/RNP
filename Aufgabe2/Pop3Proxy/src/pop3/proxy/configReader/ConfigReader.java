@@ -78,5 +78,5 @@ public class ConfigReader {
 }
 
 
-
+/* Quelle: http://examples.javacodegeeks.com/core-java/json/java-json-parser-example/s */
 
