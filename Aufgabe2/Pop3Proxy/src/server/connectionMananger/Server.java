@@ -21,9 +21,11 @@ public class Server implements Runnable{
     private final ExecutorService executor;
     private final Map<UID, ClientConnectionDokument> clientMap;
     private final InputBuffer<NetworkToken> buffer;
+	private final int maxLineSize;
 
-    public Server(int port, ExecutorService executor, Map<UID, ClientConnectionDokument> clientMap, InputBuffer<NetworkToken> buffer){
-        this.serverPort = port;
+    public Server(int port, ExecutorService executor, Map<UID, ClientConnectionDokument> clientMap, InputBuffer<NetworkToken> buffer, int maxLineSize){
+        this.maxLineSize = maxLineSize;
+    	this.serverPort = port;
         this.executor = executor;
         this.clientMap = clientMap;
         this.buffer = buffer;
@@ -68,7 +70,7 @@ public class Server implements Runnable{
             	
             }
             else{
-            	ClientConnectionDokument client = new ClientConnectionDokument(clientSocket, buffer,clientMap);
+            	ClientConnectionDokument client = new ClientConnectionDokument(clientSocket, buffer,clientMap, maxLineSize);
             	clientMap.put(client.getClientId(), client);
                 executor.execute(client);
                 System.out.println((new Date()).toString() + " Client " + client.getClientId() + " IP: " +  client.getIP() + " has connected");

@@ -23,7 +23,7 @@ public class ClientController {
 	static{
 		buffer = new BufferImpl<>();
 		executor = Executors.newCachedThreadPool();
-		manager = new ClientConnectionManager(buffer, executor);
+		manager = new ClientConnectionManager(buffer, executor, 512);
 		
 	}
 	public static void main(String[] args) {

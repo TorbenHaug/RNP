@@ -23,7 +23,7 @@ public class ServerAnswerHandler implements Runnable {
 				ClientConnectionDokument client = clientMap.get(token.getID());
 				if (client != null){
 					client.sendMessage(token.getMessage());
-					if (token.getMessage().equals("OK BYE") || token.getMessage().equals("OK SHUTDOWN")){
+					if (token.getMessage().startsWith("-ERR QUIT") || token.getMessage().startsWith("+OK QUIT")){
 						client.stop();
 						clientMap.remove(token.getID());
 					}

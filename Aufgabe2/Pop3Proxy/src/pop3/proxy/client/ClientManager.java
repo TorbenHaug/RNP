@@ -28,10 +28,10 @@ public class ClientManager {
 	private final StopListener listener;
 	private final MessageDispatcher dispatcher;
 	
-	public ClientManager(ExecutorService executor, Set<Configs> configs, int connectionTimeOut){
+	public ClientManager(ExecutorService executor, Set<Configs> configs, int connectionTimeOut, int maxLineSize){
 		this.buffer = new BufferImpl<NetworkToken>();
 		this.executor = executor;
-		this.manager = new ClientConnectionManager(buffer, executor, connectionTimeOut);
+		this.manager = new ClientConnectionManager(buffer, executor, connectionTimeOut, maxLineSize);
 		this.connections = new ConcurrentHashMap<>();
 		dispatcher = new MessageDispatcher(buffer, connections);
 		executor.execute(dispatcher);

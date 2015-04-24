@@ -29,9 +29,11 @@ public class ClientConnectionDokument implements Runnable{
 	private BufferedReader input;
 	private boolean isDown;
 	private final Map<UID, ClientConnectionDokument> clientMap;
+	private final int maxLineSize;
 
-    public ClientConnectionDokument(Socket clientSocket, InputBuffer<NetworkToken> buffer,Map<UID, ClientConnectionDokument> clientMap) {
-        this.clientSocket = clientSocket;
+    public ClientConnectionDokument(Socket clientSocket, InputBuffer<NetworkToken> buffer,Map<UID, ClientConnectionDokument> clientMap, int maxLineSize) {
+        this.maxLineSize = maxLineSize;
+    	this.clientSocket = clientSocket;
         this.buffer   = buffer;
         this.clientId = new UID();
         this.clientMap = clientMap;
@@ -40,6 +42,7 @@ public class ClientConnectionDokument implements Runnable{
 		} catch (IOException e) {
 			stop();
 		}
+        buffer.addMessageIntoInput(new NetworkToken("CONN", clientId, clientSocket.getInetAddress().toString()));
     }
 
     public void run() {
@@ -51,14 +54,14 @@ public class ClientConnectionDokument implements Runnable{
 			int sign = 0;
 			while (((sign = input.read()) != -1) && !isStopped) {
 			    line+= (char) sign;
-			    if (line.length() >= 255){
+			    if (line.length() >= maxLineSize){
 			    	sendMessage("ERROR Message too long");
 			    	while (((sign = input.read()) != -1) && (((char) sign) != '\n') && !isStopped){
 			    		
 			    	}
 			    	line = "";
 			    }
-			    else if ((char) sign == '\n'){
+			    else if (line.endsWith("\r\n")){
 			    	buffer.addMessageIntoInput(new NetworkToken(line, clientId, getIP()));
 			    	line = "";
 			    	//ServerController.setUsed();

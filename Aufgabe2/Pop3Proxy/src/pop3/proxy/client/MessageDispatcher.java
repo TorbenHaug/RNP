@@ -10,24 +10,28 @@ public class MessageDispatcher implements Runnable{
 	
 	private final InputBuffer<NetworkToken> buffer;
 	private final Map<UID, ClientConnection> connections;
+	private boolean isStopped = false;
 	public MessageDispatcher(InputBuffer<NetworkToken> buffer, Map<UID, ClientConnection> connections) {
 		this.buffer = buffer;
 		this.connections = connections;
 	}
 	@Override
 	public void run() {
-		while(true){
+		while(!isStopped ){
 			NetworkToken token = buffer.getMessageFromOutput();
-			ClientConnection connection = connections.get(token.getID());
-			if (connection != null){
-				connection.addMessage(token.getMessage());
+			if(token != null){
+				ClientConnection connection = connections.get(token.getID());
+				if (connection != null){
+					connection.addMessage(token.getMessage());
+				}
 			}
 		}
+		System.out.println("Stoped MessageDispatcher");
 		
 	}
 	
 	public void stop(){
-		
+		isStopped = true;
 	}
 
 }

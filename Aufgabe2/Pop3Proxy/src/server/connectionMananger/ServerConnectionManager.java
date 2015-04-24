@@ -19,10 +19,12 @@ public class ServerConnectionManager {
 	private final ServerAnswerHandler answerHandler;
 	private final Map<UID, Server> serverMap;
 	private final Map<UID, ClientConnectionDokument> clientMap;
+	private int maxLineSize;
 	
 
 	
-	public ServerConnectionManager(InputBuffer<NetworkToken> buffer, ExecutorService executor) {
+	public ServerConnectionManager(InputBuffer<NetworkToken> buffer, ExecutorService executor, int maxLineSize) {
+		this.maxLineSize = maxLineSize;
 		this.buffer = buffer;
 		this.executor = executor;
 		this.serverMap = new ConcurrentHashMap<>();
@@ -37,7 +39,7 @@ public class ServerConnectionManager {
 	 */
 	public UID startServer(int port){
 		UID serverId = new UID();
-		Server server = new Server(port, executor, clientMap, buffer);
+		Server server = new Server(port, executor, clientMap, buffer, maxLineSize);
 		serverMap.put(
 				serverId, 
 				server
@@ -69,5 +71,9 @@ public class ServerConnectionManager {
 			
 		}
 		answerHandler.stop();
+	}
+	public void stopClient(UID connectionID) {
+		clientMap.get(connectionID).stop();
+		
 	}
 }

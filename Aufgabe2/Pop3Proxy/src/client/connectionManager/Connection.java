@@ -23,8 +23,10 @@ public class Connection implements Runnable{
 	private Thread runningThread;
 	private boolean isDown = false;
 	private final Map<UID, Connection> connectionMap;
+	private final int maxLineSize;
 	
-	public Connection(String adress, int port, OutputBuffer<NetworkToken> buffer, Map<UID, Connection> connectionMap, int timeOut) throws UnknownHostException, IOException {
+	public Connection(String adress, int port, OutputBuffer<NetworkToken> buffer, Map<UID, Connection> connectionMap, int timeOut, int maxLineSize) throws UnknownHostException, IOException {
+		this.maxLineSize = maxLineSize;
 		this.socket = new Socket();
 		try{
 			socket.connect(new InetSocketAddress(adress, port), timeOut);
@@ -56,11 +58,11 @@ public class Connection implements Runnable{
 				int sign = 0;
 				while (((sign = input.read()) != -1) && !isStopped) {
 				    line+= (char) sign;
-				    if (line.length() >= 255){
+				    if (line.length() >= maxLineSize){
 				    	System.out.println("ERROR Server sendet zu viele Daten, disconnect");
 				    	//ClientController.disconnectCurrentConnection();
 				    	//TODO: DisconnectHandling
-				    }else if((char) sign == '\n'){
+				    }else if(line.endsWith("\r\n")){
 				    	buffer.addMessageIntoOutput(new NetworkToken(line, uid, getIP()));
 				    	line = "";
 				    }

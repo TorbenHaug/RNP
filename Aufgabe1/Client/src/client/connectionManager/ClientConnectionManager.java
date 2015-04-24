@@ -18,8 +18,10 @@ public class ClientConnectionManager {
 	private ExecutorService executor;
 	private Map<UID, Connection> connectionMap;
 	private ClientAnswerHandler answerHandler;
+	private int maxSizePerLine;
 
-	public ClientConnectionManager(OutputBuffer<NetworkToken> buffer, ExecutorService executor) {
+	public ClientConnectionManager(OutputBuffer<NetworkToken> buffer, ExecutorService executor, int maxSizePerLine) {
+		this.maxSizePerLine = maxSizePerLine;
 		this.buffer = buffer;
 		this.executor = executor;
 		this.connectionMap = new ConcurrentHashMap<>();
@@ -27,7 +29,7 @@ public class ClientConnectionManager {
 		executor.execute(answerHandler);
 	}
 	public UID connect(String adress, int port) throws UnknownHostException, IOException{
-		Connection connection = new Connection(adress, port, buffer, connectionMap);
+		Connection connection = new Connection(adress, port, buffer, connectionMap,maxSizePerLine);
 		executor.execute(connection);
 		connectionMap.put(connection.getUid(), connection);
 		return connection.getUid();
