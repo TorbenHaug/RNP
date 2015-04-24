@@ -1,0 +1,23 @@
+{ 
+	"data": [
+		{
+			"user" : "Torben",
+			"pass" : "12345",
+			"server" : "127.0.0.1",
+			"port" : 12,
+			"timeInterval" : 30
+		},
+		{
+			"user" : "Louisa",
+			"pass" : "1435",
+			"server" : "127.0.0.1",
+			"port" : 948,
+			"timeInterval" : 30
+		}
+	]
+	
+}
+
+
+
+

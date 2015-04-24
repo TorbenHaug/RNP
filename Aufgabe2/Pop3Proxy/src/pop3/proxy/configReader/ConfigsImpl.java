@@ -1,35 +1,51 @@
 package pop3.proxy.configReader;
 
-import java.util.List;
-import org.json.simple.parser.JSONParser;
 
 
-class ConfigsImpl {
+class ConfigsImpl implements Configs{
 	
 	String user;
 	String pass;
+	String server;
+	int port;
+	int timeInterval;
+	
 
-	ConfigsImpl(String user, String pass){
+	ConfigsImpl(String user, String pass, String server, int port, int timeInterval){
 		this.user = user;
 		this.pass = pass;
+		this.server = server;
+		this.port = port;
+		this.timeInterval = timeInterval;
 	}
 
 	
-//	public List<Configs> getFileInput(){
-//		JSONParser parser = new JSONParser();
-//		JSONObject jsonObject = (JSONObject) jsonParser.parse(reader);
-//		
-//        // get a String from the JSON object
-//		String firstName = (String) jsonObject.get("firstname");
-//        System.out.println("The first name is: " + firstName);
-//
-// 
-//        // get a number from the JSON object
-//        long id =  (long) jsonObject.get("id");
-//        System.out.println("The id is: " + id);
-//
-//		
-//		
-//	}
+	@Override
+	public String getUser() {
+		return this.user;
+	}
+
+	@Override
+	public String getPass() {
+		return this.pass;
+	}
+
+	@Override
+	public String getServer() {
+		return this.server;
+	}
+
+	@Override
+	public int getPort() {
+		return this.port;
+	}
+
+	@Override
+	public int getTimeInterval() {
+		return this.timeInterval;
+	}
+
+	
+
 	
 }
