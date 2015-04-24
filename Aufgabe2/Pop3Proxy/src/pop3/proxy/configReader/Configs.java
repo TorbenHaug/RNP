@@ -1,3 +1,5 @@
+package pop3.proxy.configReader;
+
 import java.util.List;
 
 public interface Configs {
