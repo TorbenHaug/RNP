@@ -4,7 +4,6 @@ import java.rmi.server.UID;
 import java.util.Map;
 
 import utils.adt.NetworkToken;
-import sun.rmi.runtime.NewThreadAction;
 import utils.buffer.InputBuffer;
 
 public class ServerAnswerHandler implements Runnable {
