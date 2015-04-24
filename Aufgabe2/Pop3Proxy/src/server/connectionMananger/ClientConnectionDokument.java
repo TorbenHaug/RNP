@@ -14,7 +14,6 @@ import java.util.Map;
 import javax.sound.midi.ControllerEventListener;
 
 import utils.adt.NetworkToken;
-import server.controller.ServerController;
 import utils.buffer.InputBuffer;
 
 /**
@@ -62,7 +61,8 @@ public class ClientConnectionDokument implements Runnable{
 			    else if ((char) sign == '\n'){
 			    	buffer.addMessageIntoInput(new NetworkToken(line, clientId, getIP()));
 			    	line = "";
-			    	ServerController.setUsed();
+			    	//ServerController.setUsed();
+			    	//TODO: MayBe used
 			    }
 			}
 			
