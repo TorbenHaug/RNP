@@ -24,7 +24,7 @@ public class Connection implements Runnable{
 	
 	public Connection(String adress, int port, OutputBuffer<NetworkToken> buffer, Map<UID, Connection> connectionMap) throws UnknownHostException, IOException {
 		this.socket = new Socket();
-		socket.connect(new InetSocketAddress(adress, port), 1000);
+		socket.connect(new InetSocketAddress(adress, port));
 		this.uid = new UID();
 		this.buffer = buffer;
 		this.connectionMap = connectionMap;

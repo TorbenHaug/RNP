@@ -1,7 +1,7 @@
 package pop3.proxy.configReader;
 
 import java.util.List;
-import org.json.simple.parser.JSONParser;
+//import org.json.simple.parser.JSONParser;
 
 
 class ConfigsImpl {
