@@ -1,11 +1,5 @@
 package pop3.proxy.configReader;
 
-<<<<<<< HEAD
-=======
-import java.util.List;
-//import org.json.simple.parser.JSONParser;
->>>>>>> 51c20ed6a38b713b5d0aa6be68706d5afe6c68ab
-
 
 class ConfigsImpl implements Configs{
 	
