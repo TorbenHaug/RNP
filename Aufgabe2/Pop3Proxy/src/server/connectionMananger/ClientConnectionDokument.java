@@ -64,13 +64,8 @@ public class ClientConnectionDokument implements Runnable{
 			    else if (line.endsWith("\r\n")){
 			    	buffer.addMessageIntoInput(new NetworkToken(line, clientId, getIP()));
 			    	line = "";
-			    	//ServerController.setUsed();
-			    	//TODO: MayBe used
 			    }
 			}
-			
-			//input = clientSocket.getInputStream();
-			//System.out.println(input.toString());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			//e.printStackTrace();

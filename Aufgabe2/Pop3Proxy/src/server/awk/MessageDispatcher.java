@@ -6,16 +6,17 @@ import java.util.Map;
 import pop3.proxy.client.StopListener;
 import utils.adt.NetworkToken;
 import utils.buffer.InputBuffer;
+import utils.buffer.OutputBuffer;
 
 public class MessageDispatcher implements Runnable{
 	
-	private final InputBuffer<NetworkToken> buffer;
+	private final OutputBuffer<NetworkToken> buffer;
 	private final Map<UID, ClientConnection> connections;
 	private boolean isStopped = false;
 	private final CreateClientConnection create;
 	private final StopListener clientDisconnector;
 	
-	public MessageDispatcher(InputBuffer<NetworkToken> buffer, Map<UID, ClientConnection> connections,StopListener clientDisconnector, CreateClientConnection create) {
+	public MessageDispatcher(OutputBuffer<NetworkToken> buffer, Map<UID, ClientConnection> connections,StopListener clientDisconnector, CreateClientConnection create) {
 		this.buffer = buffer;
 		this.connections = connections;
 		this.create = create;
@@ -24,14 +25,11 @@ public class MessageDispatcher implements Runnable{
 	@Override
 	public void run() {
 		while(!isStopped ){
-			NetworkToken token = buffer.getMessageFromOutput();
+			NetworkToken token = buffer.getMessageFromInput();
 			if(token != null){
+				System.out.println(token.getMessage());
 				if(token.getMessage().equals("CONN")){
-					if(create.createClient(token)){
-						buffer.addMessageIntoInput(new NetworkToken("+OK Hello to the server Louisa and Torben.", token.getID(), token.getIP()));
-					}
-					else{
-						buffer.addMessageIntoInput(new NetworkToken("-ERR Hello from server of Louisa and Torben, we are sorry to but something went wrong", token.getID(), token.getIP()));
+					if(!create.createClient(token)){
 						clientDisconnector.stop(token.getID());
 					}
 				}else{

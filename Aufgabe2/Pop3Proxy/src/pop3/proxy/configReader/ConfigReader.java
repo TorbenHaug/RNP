@@ -25,8 +25,8 @@ public class ConfigReader {
 	private static final String filePath = correntDir + File.separator + ".." + File.separator + "doc" + File.separator + "doc.json";
 
 	
-	public static Set<Configs> getFileInput(){
-		Set<Configs> dataSet = new HashSet<>();
+	public static Set<Config> getFileInput(){
+		Set<Config> dataSet = new HashSet<>();
 		
 		try {
 			FileReader reader = new FileReader(filePath);
@@ -57,7 +57,7 @@ public class ConfigReader {
 			    
 			    System.out.println("");
 				
-			    Configs userData = new ConfigsImpl(user, pass, server, port, timeInterval);
+			    Config userData = new ConfigsImpl(user, pass, server, port, timeInterval);
 			    
 			    dataSet.add(userData);
 			 }

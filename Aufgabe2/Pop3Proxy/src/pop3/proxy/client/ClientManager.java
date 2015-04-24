@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import pop3.proxy.configReader.Configs;
+import pop3.proxy.configReader.Config;
 import utils.adt.NetworkToken;
 import utils.buffer.Buffer;
 import utils.buffer.BufferImpl;
@@ -28,7 +28,7 @@ public class ClientManager {
 	private final StopListener listener;
 	private final MessageDispatcher dispatcher;
 	
-	public ClientManager(ExecutorService executor, Set<Configs> configs, int connectionTimeOut, int maxLineSize){
+	public ClientManager(ExecutorService executor, Set<Config> configs, int connectionTimeOut, int maxLineSize){
 		this.buffer = new BufferImpl<NetworkToken>();
 		this.executor = executor;
 		this.manager = new ClientConnectionManager(buffer, executor, connectionTimeOut, maxLineSize);
@@ -43,7 +43,7 @@ public class ClientManager {
 			}
 		};
 		
-		for(Configs config: configs){
+		for(Config config: configs){
 			UID connectionID;
 			try {
 				connectionID = manager.connect(config.getServer(), config.getPort());

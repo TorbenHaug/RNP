@@ -6,7 +6,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import pop3.proxy.client.ClientManager;
-import pop3.proxy.configReader.Configs;
+import pop3.proxy.configReader.Config;
+import server.awk.ServerManager;
 import server.connectionMananger.Server;
 import server.connectionMananger.ServerConnectionManager;
 import utils.adt.NetworkToken;
@@ -16,8 +17,8 @@ public class MainClass {
 	private static ExecutorService executor = Executors.newCachedThreadPool();
 	
 	public static void main(String[] args) {
-		HashSet<Configs> configs = new HashSet<Configs>();
-		configs.add(new Configs() {
+		HashSet<Config> config = new HashSet<Config>();
+		config.add(new Config() {
 			
 			@Override
 			public String getUser() {
@@ -44,7 +45,7 @@ public class MainClass {
 				return "rnp";
 			}
 		});
-		new ClientManager(executor, configs,5,512);
-		new ServerConnectionManager(new BufferImpl<NetworkToken>(), executor, 100).startServer(8070);
+		new ClientManager(executor, config,5,512);
+		new ServerManager(executor, 512, 8070, config, 60);
 	}
 }
