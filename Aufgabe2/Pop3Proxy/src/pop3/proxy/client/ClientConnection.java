@@ -23,11 +23,15 @@ public class ClientConnection{
 		this.buffer = buffer;
 	}
 	
-	public void getMails(){
-		buffer.addMessageIntoInput(new NetworkToken("Hallo Server", connectionID, config.getServer()));
-	}
-	public void addMessage(String message){
+//	public void getMails(){
+//		buffer.addMessageIntoInput(new NetworkToken("Hallo Server", connectionID, config.getServer()));
+//	}
+	synchronized public void addMessage(String message){
 		System.out.println("Server" + message);
+		
+//		stoppt verbindung
+//		listener.stop(connectionID);
+		
 	}
 	
 
