@@ -226,7 +226,6 @@ public class ClientConnection implements Runnable{
 						if(intId > currentMails.size() || currentMails.get(intId - 1).isDeleted() || intId < 1){
 							sendMessage("-ERR no such message");
 						}else{
-							currentMails.get(intId - 1).setDeleted(true);
 							sendMessage("+OK " + intId + " " + currentMails.get(intId - 1).getMd5hash());
 						}
 					}catch(NumberFormatException e){
@@ -234,6 +233,15 @@ public class ClientConnection implements Runnable{
 					}
 				}
 			}else if(message.startsWith("QUIT")){
+				for(MailWrapper mailWrapper: currentMails){
+					if(mailWrapper.isDeleted()){
+						try{
+							mailWrapper.getMail().delete();
+						}catch(SecurityException e){
+							System.out.println("ERROR deleting Mail " + mailWrapper.getMail().getAbsolutePath());
+						}
+					}
+				}
 				listener.stop(connectionID);
 			}else{
 				sendMessage("-ERR Wrong Command");
