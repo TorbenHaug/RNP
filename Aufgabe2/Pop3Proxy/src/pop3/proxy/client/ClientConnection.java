@@ -36,6 +36,7 @@ public class ClientConnection{
 	private long messageCount = 0;
 	private int maxOfTry= 5;
 	private String uniqueMailName;
+	private int lineCount;
 	private static String correntDir = System.getProperty("user.dir");
 	private static final String filePath = correntDir + File.separator + ".." + File.separator + "doc" + File.separator;
 	
@@ -76,8 +77,8 @@ public class ClientConnection{
 			transactionState(message);
 		} else if (currentState == Reading){
 			readingState(message);	
-		} else if (currentState == DuringReadingState){
-			duringReadingState(message);
+		} else if (currentState == Delete){
+			deleteState(message);
 		} else if (currentState == Update){
 			listener.stop(connectionID);	
 		}
@@ -131,73 +132,125 @@ public class ClientConnection{
 	 * @param splitMessage
 	 */
 	private void transactionState(String message){
-		String[] splitMessage = message.split(" ", 3);
-		System.out.println(splitMessage[0]);
-		System.out.println(splitMessage[1]);
-		System.out.println(splitMessage[2]);
-		if (message.startsWith(ok)){
-			this.numberOfMessages = Long.parseLong(splitMessage[1]);
-			if(numberOfMessages > 0){
-				sendMessage("RETR " + (messageCount + 1));
-				try {
-					uniqueMailName = md5Hash(new UID().toString() + new UID().toString() + new UID().toString());
-				} catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} 
-			}
-			currentState = Reading;
-		} else if (message.startsWith(err)){
-			if (maxOfTry > 0){
-				maxOfTry--;
-				sendMessage("STAT");
-			} else {
-				System.out.println("Tried to many times to type STAT");
+		if(message.startsWith(ok)){
+			String[] splitMessage = message.split(" ", 3);
+			numberOfMessages = Long.parseLong(splitMessage[1]);
+			if(!readingStart()){
+				System.out.println("Nothing to Read");
 				currentState = Update;
 				sendMessage("QUIT");
 			}
-			
-		} 
+		}else{
+			sendMessage("-ERR Unknown command");
+		}
 	}
 	
-	/**
-	 * 
-	 * @param splitMessage
-	 * @param message
-	 */
-	private void readingState(String message){
-		if (message.startsWith(ok)){
-			currentState = DuringReadingState;
-		} else if (this.numberOfMessages > this.messageCount){
-			sendMessage("RETR " + (messageCount + 1));
+	private boolean readingStart(){
+		if(numberOfMessages>messageCount){
+			sendMessage("RETR " + (++messageCount));
+			this.lineCount = 0;
 			try {
 				uniqueMailName = md5Hash(new UID().toString() + new UID().toString() + new UID().toString());
 			} catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} 
-		} else {
-			System.out.println("No more Messages to read ");
+				
+			}
+			currentState = Reading;
+			return true;
+		}else{
+			return false;
+		}
+	}
+	
+	private void readingState(String message){
+		lineCount++;
+		if(lineCount == 1){
+			if(!message.startsWith(ok)){
+				currentState = Delete;
+			}
+		}else{
+			if(!message.equals(".\r\n")){
+				writeToFile(message);
+			}else{
+				sendMessage("DELE" + messageCount);
+				currentState = Delete;
+			}
+		}
+	}
+	private void deleteState(String message){
+		if(!readingStart()){
+			System.out.println("Nothing to Read");
 			currentState = Update;
 			sendMessage("QUIT");
 		}
-			
 	}
-	
-	private void duringReadingState(String message){
-		if(!message.equals(".\r\n")){
-			writeToFile(message);
-		} else {
-			sendMessage("DELE " + (messageCount + 1));
-			messageCount++;
-			if (this.numberOfMessages > this.messageCount){
-				currentState = Reading;
-			} else {
-				currentState = Update;
-			}
-			
-		}
-	}
+//	private void transactionState(String message){
+//		String[] splitMessage = message.split(" ", 3);
+//		System.out.println(splitMessage[0]);
+//		System.out.println(splitMessage[1]);
+//		System.out.println(splitMessage[2]);
+//		if (message.startsWith(ok)){
+//			this.numberOfMessages = Long.parseLong(splitMessage[1]);
+//			if(numberOfMessages > 0){
+//				sendMessage("RETR " + (messageCount + 1));
+//				try {
+//					uniqueMailName = md5Hash(new UID().toString() + new UID().toString() + new UID().toString());
+//				} catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				} 
+//			}
+//			currentState = Reading;
+//		} else if (message.startsWith(err)){
+//			if (maxOfTry > 0){
+//				maxOfTry--;
+//				sendMessage("STAT");
+//			} else {
+//				System.out.println("Tried to many times to type STAT");
+//				currentState = Update;
+//				sendMessage("QUIT");
+//			}
+//			
+//		} 
+//	}
+//	
+//	/**
+//	 * 
+//	 * @param splitMessage
+//	 * @param message
+//	 */
+//	private void readingState(String message){
+//		if (message.startsWith(ok)){
+//			currentState = DuringReadingState;
+//		} else if (this.numberOfMessages > this.messageCount){
+//			sendMessage("RETR " + (messageCount + 1));
+//			try {
+//				uniqueMailName = md5Hash(new UID().toString() + new UID().toString() + new UID().toString());
+//			} catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			} 
+//		} else {
+//			System.out.println("No more Messages to read ");
+//			currentState = Update;
+//			sendMessage("QUIT");
+//		}
+//			
+//	}
+//	
+//	private void duringReadingState(String message){
+//		if(!message.equals(".\r\n")){
+//			writeToFile(message);
+//		} else {
+//			sendMessage("DELE " + (messageCount + 1));
+//			messageCount++;
+//			if (this.numberOfMessages > this.messageCount){
+//				currentState = Reading;
+//			} else {
+//				currentState = Update;
+//			}
+//			
+//		}
+//	}
 	
 	/**
 	 * 
