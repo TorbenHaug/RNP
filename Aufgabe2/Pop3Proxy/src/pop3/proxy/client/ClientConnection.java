@@ -12,12 +12,8 @@ import java.nio.file.Paths;
 import java.rmi.server.UID;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Set;
-import java.util.UUID;
 
-import client.connectionManager.ClientConnectionManager;
 import pop3.proxy.configReader.Config;
-import server.awk.State;
 import utils.adt.NetworkToken;
 import utils.buffer.InputBuffer;
 
@@ -35,6 +31,7 @@ public class ClientConnection{
 	private long numberOfMessages;
 	private long messageCount = 0;
 	private int maxOfTry= 5;
+	private int failStat = 3;
 	private String uniqueMailName;
 	private int lineCount;
 	private static String correntDir = System.getProperty("user.dir");
@@ -94,7 +91,7 @@ public class ClientConnection{
 			currentState = User;
 			sendMessage("USER " + config.getUser());
 		} else if (message.startsWith(err)){
-			//TODO What happens if connection failed
+			listener.stop(connectionID);
 		}	
 	}
 	
@@ -107,8 +104,10 @@ public class ClientConnection{
 			currentState = Pass;
 			sendMessage("PASS " + config.getPass());
 		} else if (message.startsWith(err)){
-			currentState = Connected;
-			sendMessage("USER " + config.getUser());
+			if (!failLogin()){
+				currentState = User;
+				sendMessage("USER " + config.getUser());
+			}
 		}	
 	}
 	
@@ -119,11 +118,12 @@ public class ClientConnection{
 	private void passState(String message){
 		if (message.startsWith(ok)){
 			currentState = Transaction;
-			maxOfTry--;
 			sendMessage("STAT");
 		} else if (message.startsWith(err)){
-			currentState = Connected;
-			sendMessage("USER " + config.getUser());
+			if (!failLogin()){
+				currentState = User;
+				sendMessage("USER " + config.getUser());
+			}
 		}	
 	}
 	
@@ -141,10 +141,20 @@ public class ClientConnection{
 				sendMessage("QUIT");
 			}
 		}else{
-			sendMessage("-ERR Unknown command");
+			failStat--;
+			if (failStat <= 0){
+				sendMessage("QUIT");
+				currentState = Update;
+			}else{
+				sendMessage("STAT");
+			}
 		}
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
 	private boolean readingStart(){
 		if(numberOfMessages>messageCount){
 			sendMessage("RETR " + (++messageCount));
@@ -161,6 +171,10 @@ public class ClientConnection{
 		}
 	}
 	
+	/**
+	 * 
+	 * @param message
+	 */
 	private void readingState(String message){
 		lineCount++;
 		if(lineCount == 1){
@@ -176,6 +190,11 @@ public class ClientConnection{
 			}
 		}
 	}
+	
+	/**
+	 * 
+	 * @param message
+	 */
 	private void deleteState(String message){
 		if(!readingStart()){
 			System.out.println("Nothing to Read");
@@ -183,74 +202,6 @@ public class ClientConnection{
 			sendMessage("QUIT");
 		}
 	}
-//	private void transactionState(String message){
-//		String[] splitMessage = message.split(" ", 3);
-//		System.out.println(splitMessage[0]);
-//		System.out.println(splitMessage[1]);
-//		System.out.println(splitMessage[2]);
-//		if (message.startsWith(ok)){
-//			this.numberOfMessages = Long.parseLong(splitMessage[1]);
-//			if(numberOfMessages > 0){
-//				sendMessage("RETR " + (messageCount + 1));
-//				try {
-//					uniqueMailName = md5Hash(new UID().toString() + new UID().toString() + new UID().toString());
-//				} catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				} 
-//			}
-//			currentState = Reading;
-//		} else if (message.startsWith(err)){
-//			if (maxOfTry > 0){
-//				maxOfTry--;
-//				sendMessage("STAT");
-//			} else {
-//				System.out.println("Tried to many times to type STAT");
-//				currentState = Update;
-//				sendMessage("QUIT");
-//			}
-//			
-//		} 
-//	}
-//	
-//	/**
-//	 * 
-//	 * @param splitMessage
-//	 * @param message
-//	 */
-//	private void readingState(String message){
-//		if (message.startsWith(ok)){
-//			currentState = DuringReadingState;
-//		} else if (this.numberOfMessages > this.messageCount){
-//			sendMessage("RETR " + (messageCount + 1));
-//			try {
-//				uniqueMailName = md5Hash(new UID().toString() + new UID().toString() + new UID().toString());
-//			} catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			} 
-//		} else {
-//			System.out.println("No more Messages to read ");
-//			currentState = Update;
-//			sendMessage("QUIT");
-//		}
-//			
-//	}
-//	
-//	private void duringReadingState(String message){
-//		if(!message.equals(".\r\n")){
-//			writeToFile(message);
-//		} else {
-//			sendMessage("DELE " + (messageCount + 1));
-//			messageCount++;
-//			if (this.numberOfMessages > this.messageCount){
-//				currentState = Reading;
-//			} else {
-//				currentState = Update;
-//			}
-//			
-//		}
-//	}
 	
 	/**
 	 * 
@@ -297,5 +248,17 @@ public class ClientConnection{
 	private void sendMessage(String message){
 		buffer.addMessageIntoInput(new NetworkToken(message, connectionID, config.getServer()));
 	}
-
+	
+	private boolean failLogin(){
+		maxOfTry--;
+		System.out.println(maxOfTry);
+		if (maxOfTry <= 0){
+			sendMessage("QUIT");
+			currentState = Update;
+			return true;
+		}
+		return false;
+	}
+	
+	
 }
