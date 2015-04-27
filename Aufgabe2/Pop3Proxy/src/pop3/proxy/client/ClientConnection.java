@@ -22,10 +22,8 @@ public class ClientConnection{
 	private final StopListener listener;
 	private final UID connectionID;
 	private final InputBuffer<NetworkToken> buffer;
-	private final String ok = "+OK ";
-	private final String ok_crnl = "+OK\r\n";
-	private final String err = "-ERR ";
-	private final String err_crnl = "-ERR\r\n";
+	private final String ok = "+OK";
+	private final String err = "-ERR";
 	private ClientState currentState = Connected;
 	private long numberOfMessages;
 	private long messageCount = 1;
@@ -49,24 +47,20 @@ public class ClientConnection{
 	 */
 	synchronized public void addMessage(String message){
 		System.out.println("Server" + message);
-		String[] splitMessage = message.split(" ", 2);
+//		String[] splitMessage = message.split(" ", 2);
 				
 		if (currentState == Connected){
-			connectingState(splitMessage);	
+			connectingState(message);	
 		} else if (currentState == User){
-			userState(splitMessage);
+			userState(message);
 		} else if (currentState == Pass){
-			passState(splitMessage);
+			passState(message);
 		} else if (currentState == Transaction){
-			transactionState(splitMessage);
+			transactionState(message);
 		} else if (currentState == Reading){
-			readingState(splitMessage, message);			
+			readingState(message);			
 		} else if (currentState == Update){
-			if ((splitMessage[0].equals(ok))){
-				listener.stop(connectionID);
-			} else if (splitMessage[0].equals(err)){
-				
-			}	
+			listener.stop(connectionID);	
 		}
 		
 		
@@ -79,11 +73,11 @@ public class ClientConnection{
 	 * 
 	 * @param splitMessage
 	 */
-	private void connectingState(String[] splitMessage){
-		if ((splitMessage[0].equals(ok)) || (splitMessage[0].equals(ok_crnl))){
+	private void connectingState(String message){
+		if (message.startsWith(ok)){
 			currentState = User;
 			sendMessage("USER " + config.getUser());
-		} else if (splitMessage[0].equals(err) || splitMessage[0].equals(err_crnl)){
+		} else if (message.startsWith(err)){
 			//TODO What happens if connection failed
 		}	
 	}
@@ -92,11 +86,11 @@ public class ClientConnection{
 	 * 
 	 * @param splitMessage
 	 */
-	private void userState(String[] splitMessage){
-		if ((splitMessage[0].equals(ok)) || (splitMessage[0].equals(ok_crnl))){
+	private void userState(String message){
+		if (message.startsWith(ok)){
 			currentState = Pass;
 			sendMessage("PASS " + config.getPass());
-		} else if (splitMessage[0].equals(err) || splitMessage[0].equals(err_crnl)){
+		} else if (message.startsWith(err)){
 			currentState = Connected;
 			sendMessage("USER " + config.getUser());
 		}	
@@ -106,12 +100,12 @@ public class ClientConnection{
 	 * 
 	 * @param splitMessage
 	 */
-	private void passState(String[] splitMessage){
-		if ((splitMessage[0].equals(ok)) || (splitMessage[0].equals(ok_crnl))){
+	private void passState(String message){
+		if (message.startsWith(ok)){
 			currentState = Transaction;
 			maxOfTry--;
 			sendMessage("STAT");
-		} else if (splitMessage[0].equals(err) || splitMessage[0].equals(err_crnl)){
+		} else if (message.startsWith(err)){
 			currentState = Connected;
 			sendMessage("USER " + config.getUser());
 		}	
@@ -121,15 +115,16 @@ public class ClientConnection{
 	 * 
 	 * @param splitMessage
 	 */
-	private void transactionState(String[] splitMessage){
-		if ((splitMessage[0].equals(ok)) || (splitMessage[0].equals(ok_crnl))){
+	private void transactionState(String message){
+		String[] splitMessage = message.split(" ", 2);
+		if (message.startsWith(ok)){
 			this.numberOfMessages = Long.parseLong(splitMessage[1]);
 			if(numberOfMessages > 0){
 				sendMessage("RETR " + messageCount);
 				uniqueFileNumber++;
 			}
 			currentState = Reading;
-		} else if (splitMessage[0].equals(err) || splitMessage[0].equals(err_crnl)){
+		} else if (message.startsWith(err)){
 			if (maxOfTry > 0){
 				maxOfTry--;
 				sendMessage("STAT");
@@ -147,8 +142,8 @@ public class ClientConnection{
 	 * @param splitMessage
 	 * @param message
 	 */
-	private void readingState(String[] splitMessage, String message){
-		if ((splitMessage[0].equals(ok)) || (splitMessage[0].equals(ok_crnl))){
+	private void readingState(String message){
+		if (message.startsWith(ok)){
 		} else if (this.numberOfMessages >= this.messageCount){
 			if(!message.equals(".\r\n")){
 				writeToFile(message);
