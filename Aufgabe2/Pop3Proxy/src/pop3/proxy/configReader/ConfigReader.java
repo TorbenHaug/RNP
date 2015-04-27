@@ -21,15 +21,12 @@ public class ConfigReader {
 	/*
 	 * get data json file in current directory 
 	 * */
-	private static String correntDir = System.getProperty("user.dir");
-	private static final String filePath = correntDir + File.separator + ".." + File.separator + "doc" + File.separator + "doc.json";
 
-	
-	public static Set<Config> getFileInput(){
+	public static Set<Config> getFileInput(String dataFolder) throws IOException{
 		Set<Config> dataSet = new HashSet<>();
 		
 		try {
-			FileReader reader = new FileReader(filePath);
+			FileReader reader = new FileReader(dataFolder + "doc.json");
 			JSONParser jsonParser = new JSONParser();
 			JSONObject jsonObject = (JSONObject) jsonParser.parse(reader);
 			JSONArray data= (JSONArray) jsonObject.get("data");
@@ -63,11 +60,11 @@ public class ConfigReader {
 			 }
 			
 		} catch (FileNotFoundException e) {
-			System.out.println("The File does not exists" + e);
+			throw new IOException("The File does not exists" + e);
 		} catch (IOException e) {
-			System.out.println("Could not read File" + e);
+			throw new IOException("Could not read File" + e);
 		} catch (ParseException e) {
-			System.out.println("Could not parse the json file" + e);
+			throw new IOException("Could not parse the json file" + e);
 		}
 		
 		System.out.println(dataSet.size());

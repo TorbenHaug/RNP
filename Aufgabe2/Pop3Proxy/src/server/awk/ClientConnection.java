@@ -1,10 +1,19 @@
 package server.awk;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.rmi.server.UID;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import static server.awk.State.*;
 
+import static server.awk.State.*;
 import client.connectionManager.ClientConnectionManager;
 import pop3.proxy.client.StopListener;
 import pop3.proxy.configReader.Config;
@@ -24,8 +33,12 @@ public class ClientConnection implements Runnable{
 	private final CheckUser checkUser;
 	private int failedLogins;
 	private String userName = "";
+	private final Map<UID, String> lookedUsers;
+	private final String mailDrop;
+	private String ownMailDrop;
+	private List<MailWrapper> currentMails = new ArrayList<>();
 	
-	public ClientConnection(UID connectionID, StopListener listener, OutputBuffer<NetworkToken> buffer, int timeOut, CheckUser checkUser) {
+	public ClientConnection(UID connectionID, StopListener listener, OutputBuffer<NetworkToken> buffer, int timeOut, CheckUser checkUser, Map<UID, String> lookedUsers,String mailDrop) {
 		this.listener = listener;
 		this.connectionID = connectionID;
 		this.buffer = buffer;
@@ -34,6 +47,8 @@ public class ClientConnection implements Runnable{
 		this.checkUser = checkUser;
 		this.failedLogins = 0;
 		sendMessage("+OK Hello to the pop3server of Louisa and Torben.");
+		this.lookedUsers = lookedUsers;
+		this.mailDrop = mailDrop;
 	}
 	
 	public void addMessage(String message){
@@ -54,20 +69,134 @@ public class ClientConnection implements Runnable{
 					sendMessage("-ERR User didn't exists");
 					failLogin();
 				}
+			}else if(message.startsWith("QUIT")){
+				listener.stop(connectionID);
 			}else{
 				sendMessage("-ERR Wrong Command");
 			}
 		}else if(currentState == Pass){
 			if(message.startsWith("PASS ")){
 				if((config = checkUser.checkPass(userName, message.substring(message.indexOf(" ") + 1, message.length()))) != null){
-					currentState = LoggedIn;
-					sendMessage("+OK Welcome " + userName + ".");
+					if(!lookedUsers.containsValue(config.getUser())){
+						lookedUsers.put(connectionID, config.getUser());
+						currentState = LoggedIn;
+						ownMailDrop = mailDrop + File.separator + config.getUser();
+						if(Files.notExists(Paths.get(ownMailDrop))){
+							try {
+								Files.createDirectory(Paths.get(ownMailDrop));
+							} catch (IOException e) {
+								sendMessage("-ERR Internal Server Error");
+								listener.stop(connectionID);
+							}
+						}
+				        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Paths.get(ownMailDrop))) {
+				            for (Path path : directoryStream) {
+				            	String extension = "";
+				            	int lastPoint = path.toString().lastIndexOf('.');
+				            	if (lastPoint > 0) {
+				            	    extension = path.toString().substring(lastPoint+1);
+				            	}
+				            	if(path.toFile().isFile() && extension.equals("txt")){
+				            		currentMails.add(new MailWrapper(path.toFile()));
+				            	}
+				            }
+				        } catch (IOException ex) {
+				        	sendMessage("-ERR Internal Server Error");
+							listener.stop(connectionID);
+				        }
+				        
+						sendMessage("+OK Welcome " + userName + ".");
+					}else{
+						currentState = Connected;
+						sendMessage("-ERR Unable to lock Maildrop");
+					}
+					
 				}
 				else{
 					currentState = Connected;
 					sendMessage("-ERR Password doesn't match.");
 					failLogin();
 				}
+			}else if(message.startsWith("QUIT")){
+				listener.stop(connectionID);
+			}else{
+				sendMessage("-ERR Wrong Command");
+			}
+		}else if(currentState == LoggedIn){
+			if(message.equals("STAT")){
+				long combinedLength = 0;
+				int size = 0;
+				for (MailWrapper mail: currentMails){
+					if(!mail.isDeleted()){
+						size++;
+						combinedLength += mail.getMail().length();
+					}
+				}
+				sendMessage("+OK " + size + " " + combinedLength);
+			}else if(message.equals("LIST")){
+				long combinedLength = 0;
+				int size = 0;
+				for (MailWrapper mail: currentMails){
+					if(!mail.isDeleted()){
+						size++;
+						combinedLength += mail.getMail().length();
+					}
+				}
+				sendMessage("+OK " + size + " messages (" + combinedLength + " octets)");
+				for(int i = 0; i < currentMails.size(); i++){
+					if(!currentMails.get(i).isDeleted()){
+						sendMessage((i+1) + " " + currentMails.get(i).getMail().length());
+					}
+				}
+				sendMessage(".");
+			}else if(message.startsWith("LIST ")){
+				String msgId = message.substring(message.indexOf(" ") + 1, message.length());
+				if(msgId.isEmpty()){
+					sendMessage("-ERR No MessageID found");
+				}else{
+					try{
+						int intId = Integer.valueOf(msgId);
+						if(intId > currentMails.size() || currentMails.get(intId).isDeleted() || intId < 1){
+							sendMessage("-ERR no such message");
+						}else{
+							sendMessage("+OK " + intId + " " + currentMails.get(intId - 1).getMail().length());
+						}
+					}catch(NumberFormatException e){
+						sendMessage("-ERR " + msgId + " is not a number");
+					}
+				}
+			}else if(message.startsWith("RETR ")){
+				
+			}else if(message.startsWith("DELE ")){
+				String msgId = message.substring(message.indexOf(" ") + 1, message.length());
+				if(msgId.isEmpty()){
+					sendMessage("-ERR No MessageID found");
+				}else{
+					try{
+						int intId = Integer.valueOf(msgId);
+						if(intId > currentMails.size() || currentMails.get(intId).isDeleted() || intId < 1){
+							sendMessage("-ERR no such message");
+						}else{
+							currentMails.get(intId - 1).setDeleted(true);
+							sendMessage("+OK message " + intId + " deleted");
+						}
+					}catch(NumberFormatException e){
+						sendMessage("-ERR " + msgId + " is not a number");
+					}
+				}
+			}else if(message.startsWith("NOOP ")){
+				sendMessage("+OK");
+			}else if(message.equals("RSET")){
+				for(MailWrapper mail: currentMails){
+					mail.setDeleted(false);
+				}
+				sendMessage("+OK");
+			}else if(message.equals("UIDL")){
+				
+			}else if(message.startsWith("UIDL ")){
+				
+			}else if(message.startsWith("QUIT")){
+				listener.stop(connectionID);
 			}else{
 				sendMessage("-ERR Wrong Command");
 			}

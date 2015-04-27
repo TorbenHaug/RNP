@@ -1,6 +1,7 @@
 package server.awk;
 
 import java.rmi.server.UID;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,8 +21,11 @@ public class ServerManager {
 	private final Buffer<NetworkToken> buffer;
 	private final Map<UID, ClientConnection> connections;
 	private final StopListener clientDisconnector;
+	private final Map<UID,String> lookedUsers;
+	private final String mailDrop;
 	
-	public ServerManager(ExecutorService executor, int maxLineSize, int port, Set<Config> configs,int timeOut) {
+	public ServerManager(ExecutorService executor, int maxLineSize, int port, Set<Config> configs,int timeOut, String dataFolder) {
+		this.mailDrop = dataFolder;
 		connections = new ConcurrentHashMap<UID, ClientConnection>();
 		buffer = new BufferImpl<NetworkToken>();
 		manager = new ServerConnectionManager(buffer, executor, maxLineSize);
@@ -30,9 +34,11 @@ public class ServerManager {
 			@Override
 			public void stop(UID connectionID) {
 				buffer.addMessageIntoOutput(new NetworkToken("+OK QUIT BYE", connectionID, "0.0.0.0"));
+				lookedUsers.remove(connectionID);
 				connections.remove(connectionID);
 			}
 		};
+		lookedUsers = new ConcurrentHashMap<>();
 		dispatcher = new MessageDispatcher(buffer, connections,clientDisconnector, new CreateClientConnection() {
 			
 			@Override
@@ -58,7 +64,7 @@ public class ServerManager {
 						}
 						return null;
 					}
-				});
+				}, lookedUsers, mailDrop);
 				executor.execute(conn);
 				connections.put(token.getID(), conn);
 				return true;

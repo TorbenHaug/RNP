@@ -1,51 +1,34 @@
 package pop3.proxy.main;
 
-import java.util.HashSet;
-import java.util.concurrent.Executor;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import pop3.proxy.client.ClientManager;
 import pop3.proxy.configReader.Config;
+import pop3.proxy.configReader.ConfigReader;
 import server.awk.ServerManager;
-import server.connectionMananger.Server;
-import server.connectionMananger.ServerConnectionManager;
-import utils.adt.NetworkToken;
-import utils.buffer.BufferImpl;
+
 
 public class MainClass {
-	private static ExecutorService executor = Executors.newCachedThreadPool();
+	private static final ExecutorService executor = Executors.newCachedThreadPool();
+	private static final String currentDir = System.getProperty("user.dir");
+	private static final String dataFolder = currentDir + File.separator + ".." + File.separator + "doc" + File.separator;
+	private static final String mailDrop = dataFolder + "mailDrop" + File.separator;
 	
-	public static void main(String[] args) {
-		HashSet<Config> config = new HashSet<Config>();
-		config.add(new Config() {
-			
-			@Override
-			public String getUser() {
-				return "rnp";
-			}
-			
-			@Override
-			public int getTimeInterval() {
-				return 30;
-			}
-			
-			@Override
-			public String getServer() {
-				return "127.0.0.1";
-			}
-			
-			@Override
-			public int getPort() {
-				return 110;
-			}
-			
-			@Override
-			public String getPass() {
-				return "rnp";
-			}
-		});
-		new ClientManager(executor, config,5,512);
-		new ServerManager(executor, 512, 8070, config, 60);
+	public static void main(String[] args) throws IOException {
+		if(Files.notExists(Paths.get(dataFolder))){
+			throw new IOException("Unable to access Datafolder: " + dataFolder);
+		}
+		if(Files.notExists(Paths.get(mailDrop))){
+			Files.createDirectory(Paths.get(mailDrop));
+		}
+		Set<Config> configs = ConfigReader.getFileInput(dataFolder);
+		new ClientManager(executor, configs,5,512);
+		new ServerManager(executor, 512, 8070, configs, 60, mailDrop);
 	}
 }
