@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.rmi.server.UID;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -100,7 +101,7 @@ public class ClientConnection implements Runnable{
 				            		currentMails.add(new MailWrapper(path.toFile()));
 				            	}
 				            }
-				        } catch (IOException ex) {
+				        } catch (IOException | NoSuchAlgorithmException ex) {
 				        	sendMessage("-ERR Internal Server Error");
 							listener.stop(connectionID);
 				        }
@@ -156,7 +157,7 @@ public class ClientConnection implements Runnable{
 				}else{
 					try{
 						int intId = Integer.valueOf(msgId);
-						if(intId > currentMails.size() || currentMails.get(intId).isDeleted() || intId < 1){
+						if(intId > currentMails.size() || currentMails.get(intId - 1).isDeleted() || intId < 1){
 							sendMessage("-ERR no such message");
 						}else{
 							sendMessage("+OK " + intId + " " + currentMails.get(intId - 1).getMail().length());
@@ -166,7 +167,25 @@ public class ClientConnection implements Runnable{
 					}
 				}
 			}else if(message.startsWith("RETR ")){
-				
+				String msgId = message.substring(message.indexOf(" ") + 1, message.length());
+				if(msgId.isEmpty()){
+					sendMessage("-ERR No MessageID found");
+				}else{
+					try{
+						int intId = Integer.valueOf(msgId);
+						if(intId > currentMails.size() || currentMails.get(intId - 1).isDeleted() || intId < 1){
+							sendMessage("-ERR no such message");
+						}else{
+							sendMessage("+OK message follows");
+							for(String part: currentMails.get(intId - 1).getSplitedMail()){
+								sendMessage(part);
+							}
+							sendMessage(".");
+						}
+					}catch(NumberFormatException e){
+						sendMessage("-ERR " + msgId + " is not a number");
+					}
+				}
 			}else if(message.startsWith("DELE ")){
 				String msgId = message.substring(message.indexOf(" ") + 1, message.length());
 				if(msgId.isEmpty()){
@@ -174,7 +193,7 @@ public class ClientConnection implements Runnable{
 				}else{
 					try{
 						int intId = Integer.valueOf(msgId);
-						if(intId > currentMails.size() || currentMails.get(intId).isDeleted() || intId < 1){
+						if(intId > currentMails.size() || currentMails.get(intId - 1).isDeleted() || intId < 1){
 							sendMessage("-ERR no such message");
 						}else{
 							currentMails.get(intId - 1).setDeleted(true);
@@ -192,9 +211,28 @@ public class ClientConnection implements Runnable{
 				}
 				sendMessage("+OK");
 			}else if(message.equals("UIDL")){
-				
+				sendMessage("+OK");
+				for(int i=0; i<currentMails.size();i++){
+					sendMessage((i + 1) + " " + currentMails.get(i).getMd5hash());
+				}
+				sendMessage(".");
 			}else if(message.startsWith("UIDL ")){
-				
+				String msgId = message.substring(message.indexOf(" ") + 1, message.length());
+				if(msgId.isEmpty()){
+					sendMessage("-ERR No MessageID found");
+				}else{
+					try{
+						int intId = Integer.valueOf(msgId);
+						if(intId > currentMails.size() || currentMails.get(intId - 1).isDeleted() || intId < 1){
+							sendMessage("-ERR no such message");
+						}else{
+							currentMails.get(intId - 1).setDeleted(true);
+							sendMessage("+OK " + intId + " " + currentMails.get(intId - 1).getMd5hash());
+						}
+					}catch(NumberFormatException e){
+						sendMessage("-ERR " + msgId + " is not a number");
+					}
+				}
 			}else if(message.startsWith("QUIT")){
 				listener.stop(connectionID);
 			}else{
