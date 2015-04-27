@@ -6,7 +6,12 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.rmi.server.UID;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Set;
 import java.util.UUID;
 
@@ -22,10 +27,10 @@ public class ClientConnection{
 	private final StopListener listener;
 	private final UID connectionID;
 	private final InputBuffer<NetworkToken> buffer;
-	private final String ok = "+OK ";
-	private final String ok_crnl = "+OK\r\n";
-	private final String err = "-ERR ";
-	private final String err_crnl = "-ERR\r\n";
+	private final String ok = "+OK";
+	private final String err = "-ERR";
+	private final String mailDrop;
+	private final String ownMailDrop;
 	private ClientState currentState = Connected;
 	private long numberOfMessages;
 	private long messageCount = 1;
@@ -34,11 +39,22 @@ public class ClientConnection{
 	private static String correntDir = System.getProperty("user.dir");
 	private static final String filePath = correntDir + File.separator + ".." + File.separator + "doc" + File.separator;
 	
-	public ClientConnection(UID connectionID, Config config, StopListener listener, InputBuffer<NetworkToken> buffer) {
+	public ClientConnection(UID connectionID, Config config, StopListener listener, InputBuffer<NetworkToken> buffer, String mailDrop) {
 		this.config = config;
 		this.listener = listener;
 		this.connectionID = connectionID;
 		this.buffer = buffer;
+		this.mailDrop = mailDrop;
+		
+		this.ownMailDrop = this.mailDrop + File.separator + config.getUser();
+		if(Files.notExists(Paths.get(ownMailDrop))){
+			try {
+				Files.createDirectory(Paths.get(ownMailDrop));
+			} catch (IOException e) {
+				sendMessage("-ERR Internal Server Error");
+				listener.stop(connectionID);
+			}
+		}
 	}
 	
 	/**
@@ -49,29 +65,20 @@ public class ClientConnection{
 	 */
 	synchronized public void addMessage(String message){
 		System.out.println("Server" + message);
-		String[] splitMessage = message.split(" ", 2);
 				
 		if (currentState == Connected){
-			connectingState(splitMessage);	
+			connectingState(message);	
 		} else if (currentState == User){
-			userState(splitMessage);
+			userState(message);
 		} else if (currentState == Pass){
-			passState(splitMessage);
+			passState(message);
 		} else if (currentState == Transaction){
-			transactionState(splitMessage);
+			transactionState(message);
 		} else if (currentState == Reading){
-			readingState(splitMessage, message);			
+			readingState(message);			
 		} else if (currentState == Update){
-			if ((splitMessage[0].equals(ok))){
-				listener.stop(connectionID);
-			} else if (splitMessage[0].equals(err)){
-				
-			}	
+			listener.stop(connectionID);	
 		}
-		
-		
-//		stoppt verbindung
-//		listener.stop(connectionID);
 		
 	}
 	
@@ -79,11 +86,11 @@ public class ClientConnection{
 	 * 
 	 * @param splitMessage
 	 */
-	private void connectingState(String[] splitMessage){
-		if ((splitMessage[0].equals(ok)) || (splitMessage[0].equals(ok_crnl))){
+	private void connectingState(String message){
+		if (message.startsWith(ok)){
 			currentState = User;
 			sendMessage("USER " + config.getUser());
-		} else if (splitMessage[0].equals(err) || splitMessage[0].equals(err_crnl)){
+		} else if (message.startsWith(err)){
 			//TODO What happens if connection failed
 		}	
 	}
@@ -92,11 +99,11 @@ public class ClientConnection{
 	 * 
 	 * @param splitMessage
 	 */
-	private void userState(String[] splitMessage){
-		if ((splitMessage[0].equals(ok)) || (splitMessage[0].equals(ok_crnl))){
+	private void userState(String message){
+		if (message.startsWith(ok)){
 			currentState = Pass;
 			sendMessage("PASS " + config.getPass());
-		} else if (splitMessage[0].equals(err) || splitMessage[0].equals(err_crnl)){
+		} else if (message.startsWith(err)){
 			currentState = Connected;
 			sendMessage("USER " + config.getUser());
 		}	
@@ -106,12 +113,12 @@ public class ClientConnection{
 	 * 
 	 * @param splitMessage
 	 */
-	private void passState(String[] splitMessage){
-		if ((splitMessage[0].equals(ok)) || (splitMessage[0].equals(ok_crnl))){
+	private void passState(String message){
+		if (message.startsWith(ok)){
 			currentState = Transaction;
 			maxOfTry--;
 			sendMessage("STAT");
-		} else if (splitMessage[0].equals(err) || splitMessage[0].equals(err_crnl)){
+		} else if (message.startsWith(err)){
 			currentState = Connected;
 			sendMessage("USER " + config.getUser());
 		}	
@@ -121,15 +128,16 @@ public class ClientConnection{
 	 * 
 	 * @param splitMessage
 	 */
-	private void transactionState(String[] splitMessage){
-		if ((splitMessage[0].equals(ok)) || (splitMessage[0].equals(ok_crnl))){
+	private void transactionState(String message){
+		String[] splitMessage = message.split(" ", 2);
+		if (message.startsWith(ok)){
 			this.numberOfMessages = Long.parseLong(splitMessage[1]);
 			if(numberOfMessages > 0){
 				sendMessage("RETR " + messageCount);
 				uniqueFileNumber++;
 			}
 			currentState = Reading;
-		} else if (splitMessage[0].equals(err) || splitMessage[0].equals(err_crnl)){
+		} else if (message.startsWith(err)){
 			if (maxOfTry > 0){
 				maxOfTry--;
 				sendMessage("STAT");
@@ -147,8 +155,8 @@ public class ClientConnection{
 	 * @param splitMessage
 	 * @param message
 	 */
-	private void readingState(String[] splitMessage, String message){
-		if ((splitMessage[0].equals(ok)) || (splitMessage[0].equals(ok_crnl))){
+	private void readingState(String message){
+		if (message.startsWith(ok)){
 		} else if (this.numberOfMessages >= this.messageCount){
 			if(!message.equals(".\r\n")){
 				writeToFile(message);
@@ -174,7 +182,7 @@ public class ClientConnection{
 	 */
 	private void writeToFile(String message){
 		try { 
-			File file = new File(filePath + "file" + uniqueFileNumber + ".txt");
+			File file = new File(ownMailDrop + File.separator + "file" + md5Hash(message) + ".txt");
 			System.out.println(" this is the directory of the file: " + file.toString());
 			
 			if (!file.exists()) {
@@ -186,12 +194,29 @@ public class ClientConnection{
 			bufferedWriter.append(message);
 			bufferedWriter.close();
 			
-		} catch (IOException e) {
+		} catch (IOException | NoSuchAlgorithmException e) {
 			System.out.println("something went wrong when writing to file " + e);
 		}
 	}
 	
-	
+	/**
+	 * 
+	 * @param message
+	 * @return
+	 * @throws NoSuchAlgorithmException
+	 * @throws UnsupportedEncodingException
+	 */
+	private String md5Hash(String message) throws NoSuchAlgorithmException, UnsupportedEncodingException{
+		MessageDigest digest = MessageDigest.getInstance("MD5");
+        byte[] hashedBytes = digest.digest(message.getBytes("UTF-8"));
+        
+        StringBuffer stringBuffer = new StringBuffer();
+        for (int i = 0; i < hashedBytes.length; i++) {
+            stringBuffer.append(Integer.toString((hashedBytes[i] & 0xff) + 0x100, 16)
+                    .substring(1));
+        }
+        return stringBuffer.toString();
+	}
 
 	private void sendMessage(String message){
 		buffer.addMessageIntoInput(new NetworkToken(message, connectionID, config.getServer()));

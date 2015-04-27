@@ -27,13 +27,15 @@ public class ClientManager {
 	private final Map<UID, ClientConnection> connections;
 	private final StopListener listener;
 	private final MessageDispatcher dispatcher;
+	private final String maildrop;
 	
-	public ClientManager(ExecutorService executor, Set<Config> configs, int connectionTimeOut, int maxLineSize){
+	public ClientManager(ExecutorService executor, Set<Config> configs, int connectionTimeOut, int maxLineSize, String mailDrop){
 		this.buffer = new BufferImpl<NetworkToken>();
 		this.executor = executor;
 		this.manager = new ClientConnectionManager(buffer, executor, connectionTimeOut, maxLineSize);
 		this.connections = new ConcurrentHashMap<>();
-		dispatcher = new MessageDispatcher(buffer, connections);
+		this.dispatcher = new MessageDispatcher(buffer, connections);
+		this.maildrop = mailDrop;
 		executor.execute(dispatcher);
 		this.listener = new StopListener() {		
 			@Override
@@ -47,7 +49,7 @@ public class ClientManager {
 			UID connectionID;
 			try {
 				connectionID = manager.connect(config.getServer(), config.getPort());
-				ClientConnection connection = new ClientConnection(connectionID, config, listener,buffer);
+				ClientConnection connection = new ClientConnection(connectionID, config, listener,buffer, maildrop);
 				connections.put(connectionID, connection);
 			} catch (UnknownHostException e) {
 				System.out.println(e.getMessage());

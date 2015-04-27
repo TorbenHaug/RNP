@@ -28,7 +28,7 @@ public class MainClass {
 			Files.createDirectory(Paths.get(mailDrop));
 		}
 		Set<Config> configs = ConfigReader.getFileInput(dataFolder);
-		new ClientManager(executor, configs,5,512);
+		new ClientManager(executor, configs,5,512, mailDrop);
 		new ServerManager(executor, 512, 8070, configs, 60, mailDrop);
 
 	}
