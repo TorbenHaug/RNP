@@ -22,8 +22,8 @@ public class ClientConnection{
 	private final StopListener listener;
 	private final UID connectionID;
 	private final InputBuffer<NetworkToken> buffer;
-	private final String ok = "+OK";
-	private final String err = "-ERR";
+	private final String ok = "+OK\r\n";
+	private final String err = "-ERR\r\n";
 	private ClientState currentState = Connected;
 	private long numberOfMessages;
 	private long messageCount = 1;
@@ -61,7 +61,7 @@ public class ClientConnection{
 			readingState(splitMessage, message);			
 		} else if (currentState == Update){
 			if ((splitMessage[0].equals(ok))){
-				
+				listener.stop(connectionID);
 			} else if (splitMessage[0].equals(err)){
 				
 			}	
@@ -148,7 +148,7 @@ public class ClientConnection{
 	private void readingState(String[] splitMessage, String message){
 		if ((splitMessage[0].equals("+OK"))){
 		} else if (this.numberOfMessages >= this.messageCount){
-			if(true /* message noch nicht beendet*/){
+			if(!message.equals(".\r\n")){
 				writeToFile(message);
 			} else {
 				sendMessage("DELE " + messageCount);
@@ -158,6 +158,10 @@ public class ClientConnection{
 //				messageCount++;
 				
 			}
+		} else {
+			System.out.println("No more Messages to read ");
+			currentState = Update;
+			sendMessage("QUIT");
 		}
 			
 	}
