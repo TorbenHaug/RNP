@@ -22,8 +22,10 @@ public class ClientConnection{
 	private final StopListener listener;
 	private final UID connectionID;
 	private final InputBuffer<NetworkToken> buffer;
-	private final String ok = "+OK";
-	private final String err = "-ERR";
+	private final String ok = "+OK ";
+	private final String ok_crnl = "+OK\r\n";
+	private final String err = "-ERR ";
+	private final String err_crnl = "-ERR\r\n";
 	private ClientState currentState = Connected;
 	private long numberOfMessages;
 	private long messageCount = 1;
@@ -61,7 +63,7 @@ public class ClientConnection{
 			readingState(splitMessage, message);			
 		} else if (currentState == Update){
 			if ((splitMessage[0].equals(ok))){
-				
+				listener.stop(connectionID);
 			} else if (splitMessage[0].equals(err)){
 				
 			}	
@@ -78,10 +80,10 @@ public class ClientConnection{
 	 * @param splitMessage
 	 */
 	private void connectingState(String[] splitMessage){
-		if ((splitMessage[0].equals(ok))){
+		if ((splitMessage[0].equals(ok)) || (splitMessage[0].equals(ok_crnl))){
 			currentState = User;
 			sendMessage("USER " + config.getUser());
-		} else if (splitMessage[0].equals(err)){
+		} else if (splitMessage[0].equals(err) || splitMessage[0].equals(err_crnl)){
 			//TODO What happens if connection failed
 		}	
 	}
@@ -91,10 +93,10 @@ public class ClientConnection{
 	 * @param splitMessage
 	 */
 	private void userState(String[] splitMessage){
-		if ((splitMessage[0].equals(ok))){
+		if ((splitMessage[0].equals(ok)) || (splitMessage[0].equals(ok_crnl))){
 			currentState = Pass;
 			sendMessage("PASS " + config.getPass());
-		} else if (splitMessage[0].equals(err)){
+		} else if (splitMessage[0].equals(err) || splitMessage[0].equals(err_crnl)){
 			currentState = Connected;
 			sendMessage("USER " + config.getUser());
 		}	
@@ -105,11 +107,11 @@ public class ClientConnection{
 	 * @param splitMessage
 	 */
 	private void passState(String[] splitMessage){
-		if ((splitMessage[0].equals(ok))){
+		if ((splitMessage[0].equals(ok)) || (splitMessage[0].equals(ok_crnl))){
 			currentState = Transaction;
 			maxOfTry--;
 			sendMessage("STAT");
-		} else if (splitMessage[0].equals(err)){
+		} else if (splitMessage[0].equals(err) || splitMessage[0].equals(err_crnl)){
 			currentState = Connected;
 			sendMessage("USER " + config.getUser());
 		}	
@@ -120,14 +122,14 @@ public class ClientConnection{
 	 * @param splitMessage
 	 */
 	private void transactionState(String[] splitMessage){
-		if ((splitMessage[0].equals(ok))){
+		if ((splitMessage[0].equals(ok)) || (splitMessage[0].equals(ok_crnl))){
 			this.numberOfMessages = Long.parseLong(splitMessage[1]);
 			if(numberOfMessages > 0){
 				sendMessage("RETR " + messageCount);
 				uniqueFileNumber++;
 			}
 			currentState = Reading;
-		} else if (splitMessage[0].equals(err)){
+		} else if (splitMessage[0].equals(err) || splitMessage[0].equals(err_crnl)){
 			if (maxOfTry > 0){
 				maxOfTry--;
 				sendMessage("STAT");
@@ -146,9 +148,9 @@ public class ClientConnection{
 	 * @param message
 	 */
 	private void readingState(String[] splitMessage, String message){
-		if ((splitMessage[0].equals("+OK"))){
+		if ((splitMessage[0].equals(ok)) || (splitMessage[0].equals(ok_crnl))){
 		} else if (this.numberOfMessages >= this.messageCount){
-			if(true /* message noch nicht beendet*/){
+			if(!message.equals(".\r\n")){
 				writeToFile(message);
 			} else {
 				sendMessage("DELE " + messageCount);
@@ -158,6 +160,10 @@ public class ClientConnection{
 //				messageCount++;
 				
 			}
+		} else {
+			System.out.println("No more Messages to read ");
+			currentState = Update;
+			sendMessage("QUIT");
 		}
 			
 	}

@@ -30,5 +30,6 @@ public class MainClass {
 		Set<Config> configs = ConfigReader.getFileInput(dataFolder);
 		new ClientManager(executor, configs,5,512);
 		new ServerManager(executor, 512, 8070, configs, 60, mailDrop);
+
 	}
 }
