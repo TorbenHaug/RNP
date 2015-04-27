@@ -6,7 +6,12 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.rmi.server.UID;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Set;
 import java.util.UUID;
 
@@ -24,6 +29,8 @@ public class ClientConnection{
 	private final InputBuffer<NetworkToken> buffer;
 	private final String ok = "+OK";
 	private final String err = "-ERR";
+	private final String mailDrop;
+	private final String ownMailDrop;
 	private ClientState currentState = Connected;
 	private long numberOfMessages;
 	private long messageCount = 1;
@@ -32,11 +39,22 @@ public class ClientConnection{
 	private static String correntDir = System.getProperty("user.dir");
 	private static final String filePath = correntDir + File.separator + ".." + File.separator + "doc" + File.separator;
 	
-	public ClientConnection(UID connectionID, Config config, StopListener listener, InputBuffer<NetworkToken> buffer) {
+	public ClientConnection(UID connectionID, Config config, StopListener listener, InputBuffer<NetworkToken> buffer, String mailDrop) {
 		this.config = config;
 		this.listener = listener;
 		this.connectionID = connectionID;
 		this.buffer = buffer;
+		this.mailDrop = mailDrop;
+		
+		this.ownMailDrop = this.mailDrop + File.separator + config.getUser();
+		if(Files.notExists(Paths.get(ownMailDrop))){
+			try {
+				Files.createDirectory(Paths.get(ownMailDrop));
+			} catch (IOException e) {
+				sendMessage("-ERR Internal Server Error");
+				listener.stop(connectionID);
+			}
+		}
 	}
 	
 	/**
@@ -47,7 +65,6 @@ public class ClientConnection{
 	 */
 	synchronized public void addMessage(String message){
 		System.out.println("Server" + message);
-//		String[] splitMessage = message.split(" ", 2);
 				
 		if (currentState == Connected){
 			connectingState(message);	
@@ -62,10 +79,6 @@ public class ClientConnection{
 		} else if (currentState == Update){
 			listener.stop(connectionID);	
 		}
-		
-		
-//		stoppt verbindung
-//		listener.stop(connectionID);
 		
 	}
 	
@@ -169,7 +182,7 @@ public class ClientConnection{
 	 */
 	private void writeToFile(String message){
 		try { 
-			File file = new File(filePath + "file" + uniqueFileNumber + ".txt");
+			File file = new File(ownMailDrop + File.separator + "file" + md5Hash(message) + ".txt");
 			System.out.println(" this is the directory of the file: " + file.toString());
 			
 			if (!file.exists()) {
@@ -181,12 +194,29 @@ public class ClientConnection{
 			bufferedWriter.append(message);
 			bufferedWriter.close();
 			
-		} catch (IOException e) {
+		} catch (IOException | NoSuchAlgorithmException e) {
 			System.out.println("something went wrong when writing to file " + e);
 		}
 	}
 	
-	
+	/**
+	 * 
+	 * @param message
+	 * @return
+	 * @throws NoSuchAlgorithmException
+	 * @throws UnsupportedEncodingException
+	 */
+	private String md5Hash(String message) throws NoSuchAlgorithmException, UnsupportedEncodingException{
+		MessageDigest digest = MessageDigest.getInstance("MD5");
+        byte[] hashedBytes = digest.digest(message.getBytes("UTF-8"));
+        
+        StringBuffer stringBuffer = new StringBuffer();
+        for (int i = 0; i < hashedBytes.length; i++) {
+            stringBuffer.append(Integer.toString((hashedBytes[i] & 0xff) + 0x100, 16)
+                    .substring(1));
+        }
+        return stringBuffer.toString();
+	}
 
 	private void sendMessage(String message){
 		buffer.addMessageIntoInput(new NetworkToken(message, connectionID, config.getServer()));
