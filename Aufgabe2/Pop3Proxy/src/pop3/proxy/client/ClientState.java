@@ -7,5 +7,6 @@ public enum ClientState {
 	Pass,
 	Transaction,
 	Reading,
+	DuringReadingState,
 	Update
 }

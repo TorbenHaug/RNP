@@ -33,9 +33,9 @@ public class ClientConnection{
 	private final String ownMailDrop;
 	private ClientState currentState = Connected;
 	private long numberOfMessages;
-	private long messageCount = 1;
-	private long uniqueFileNumber = 0;
+	private long messageCount = 0;
 	private int maxOfTry= 5;
+	private String uniqueMailName;
 	private static String correntDir = System.getProperty("user.dir");
 	private static final String filePath = correntDir + File.separator + ".." + File.separator + "doc" + File.separator;
 	
@@ -75,7 +75,9 @@ public class ClientConnection{
 		} else if (currentState == Transaction){
 			transactionState(message);
 		} else if (currentState == Reading){
-			readingState(message);			
+			readingState(message);	
+		} else if (currentState == DuringReadingState){
+			duringReadingState(message);
 		} else if (currentState == Update){
 			listener.stop(connectionID);	
 		}
@@ -129,12 +131,20 @@ public class ClientConnection{
 	 * @param splitMessage
 	 */
 	private void transactionState(String message){
-		String[] splitMessage = message.split(" ", 2);
+		String[] splitMessage = message.split(" ", 3);
+		System.out.println(splitMessage[0]);
+		System.out.println(splitMessage[1]);
+		System.out.println(splitMessage[2]);
 		if (message.startsWith(ok)){
 			this.numberOfMessages = Long.parseLong(splitMessage[1]);
 			if(numberOfMessages > 0){
-				sendMessage("RETR " + messageCount);
-				uniqueFileNumber++;
+				sendMessage("RETR " + (messageCount + 1));
+				try {
+					uniqueMailName = md5Hash(new UID().toString() + new UID().toString() + new UID().toString());
+				} catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} 
 			}
 			currentState = Reading;
 		} else if (message.startsWith(err)){
@@ -157,17 +167,15 @@ public class ClientConnection{
 	 */
 	private void readingState(String message){
 		if (message.startsWith(ok)){
-		} else if (this.numberOfMessages >= this.messageCount){
-			if(!message.equals(".\r\n")){
-				writeToFile(message);
-			} else {
-				sendMessage("DELE " + messageCount);
-				messageCount++;
-				uniqueFileNumber++;
-				sendMessage("RETR " + messageCount);
-//				messageCount++;
-				
-			}
+			currentState = DuringReadingState;
+		} else if (this.numberOfMessages > this.messageCount){
+			sendMessage("RETR " + (messageCount + 1));
+			try {
+				uniqueMailName = md5Hash(new UID().toString() + new UID().toString() + new UID().toString());
+			} catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} 
 		} else {
 			System.out.println("No more Messages to read ");
 			currentState = Update;
@@ -176,13 +184,28 @@ public class ClientConnection{
 			
 	}
 	
+	private void duringReadingState(String message){
+		if(!message.equals(".\r\n")){
+			writeToFile(message);
+		} else {
+			sendMessage("DELE " + (messageCount + 1));
+			messageCount++;
+			if (this.numberOfMessages > this.messageCount){
+				currentState = Reading;
+			} else {
+				currentState = Update;
+			}
+			
+		}
+	}
+	
 	/**
 	 * 
 	 * @param message
 	 */
 	private void writeToFile(String message){
 		try { 
-			File file = new File(ownMailDrop + File.separator + "file" + md5Hash(message) + ".txt");
+			File file = new File(ownMailDrop + File.separator + "file" + uniqueMailName + ".txt");
 			System.out.println(" this is the directory of the file: " + file.toString());
 			
 			if (!file.exists()) {
@@ -194,7 +217,7 @@ public class ClientConnection{
 			bufferedWriter.append(message);
 			bufferedWriter.close();
 			
-		} catch (IOException | NoSuchAlgorithmException e) {
+		} catch (IOException e) {
 			System.out.println("something went wrong when writing to file " + e);
 		}
 	}
