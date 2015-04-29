@@ -71,6 +71,7 @@ public class ServerConnectionManager {
 			
 		}
 		answerHandler.stop();
+		stopAllServer();
 	}
 	public void stopClient(UID connectionID) {
 		clientMap.get(connectionID).stop();

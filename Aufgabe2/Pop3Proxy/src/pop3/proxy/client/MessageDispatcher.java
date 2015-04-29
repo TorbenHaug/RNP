@@ -26,7 +26,7 @@ public class MessageDispatcher implements Runnable{
 				}
 			}
 		}
-		System.out.println("Stoped MessageDispatcher");
+		System.out.println("Stoped Client MessageDispatcher");
 		
 	}
 	

@@ -79,6 +79,6 @@ public class ServerManager {
 		manager.stop();
 		dispatcher.stop();
 		buffer.stop();
-		
+		System.out.println("ServerManager herruntergefahren");
 	}
 }

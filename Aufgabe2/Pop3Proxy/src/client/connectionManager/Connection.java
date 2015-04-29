@@ -11,7 +11,9 @@ import java.net.UnknownHostException;
 import java.rmi.server.UID;
 import java.util.Map;
 
+import pop3.proxy.client.StopListener;
 import utils.adt.NetworkToken;
+import utils.buffer.Buffer;
 import utils.buffer.OutputBuffer;
 
 public class Connection implements Runnable{
@@ -19,13 +21,16 @@ public class Connection implements Runnable{
 	private UID uid;
 	private boolean isStopped = false;
 	private BufferedReader input;
-	private final OutputBuffer<NetworkToken> buffer;
+	private final Buffer<NetworkToken> buffer;
 	private Thread runningThread;
 	private boolean isDown = false;
 	private final Map<UID, Connection> connectionMap;
 	private final int maxLineSize;
+	private boolean isQuited = false;
+	private final StopListener listener;
 	
-	public Connection(String adress, int port, OutputBuffer<NetworkToken> buffer, Map<UID, Connection> connectionMap, int timeOut, int maxLineSize) throws UnknownHostException, IOException {
+	public Connection(String adress, int port, Buffer<NetworkToken> buffer, Map<UID, Connection> connectionMap, int timeOut, int maxLineSize, StopListener listener) throws UnknownHostException, IOException {
+		this.listener = listener;
 		this.maxLineSize = maxLineSize;
 		this.socket = new Socket();
 		try{
@@ -60,8 +65,7 @@ public class Connection implements Runnable{
 				    line+= (char) sign;
 				    if (line.length() >= maxLineSize){
 				    	System.out.println("ERROR Server sendet zu viele Daten, disconnect");
-				    	//ClientController.disconnectCurrentConnection();
-				    	//TODO: DisconnectHandling
+				    	listener.stop(uid);
 				    }else if(line.endsWith("\r\n")){
 				    	buffer.addMessageIntoOutput(new NetworkToken(line, uid, getIP()));
 				    	line = "";
@@ -75,7 +79,7 @@ public class Connection implements Runnable{
 				// TODO Auto-generated catch block
 				//e.printStackTrace();
 			} finally {
-				stop();
+				listener.stop(uid);
 				//ClientController.disconnectCurrentConnection();
 				//TODO: DisconnectHandling
 				connectionMap.remove(uid);
@@ -88,6 +92,10 @@ public class Connection implements Runnable{
 
 	public void stop() {
 		isStopped = true;
+		if(!isQuited){
+			sendMessage("QUIT");
+			isQuited = true;
+		}
 		try {
 			socket.close();
 		} catch (IOException e) {
@@ -105,8 +113,11 @@ public class Connection implements Runnable{
 	}
 	public synchronized void sendMessage(String message){
 		OutputStream output;
-		message += "\n";
 		try {
+			if(message.startsWith("QUIT")){
+				this.isQuited  = true;
+			}
+			message += "\r\n";
 			output = socket.getOutputStream();
 			output.write(message.getBytes("UTF-8"));
 			//output.close();

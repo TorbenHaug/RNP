@@ -29,7 +29,7 @@ public class ClientAnswerHandler implements Runnable {
 				break;
 			}
 		}
-		System.out.println("Answerhandler heruntergefahren");
+		System.out.println("Answerhandler Client heruntergefahren");
 		
 	}
 	public void stop(){
