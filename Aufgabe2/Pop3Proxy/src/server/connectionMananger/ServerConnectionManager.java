@@ -68,10 +68,9 @@ public class ServerConnectionManager {
 		Collection<ClientConnectionDokument> clients = clientMap.values();
 		for(ClientConnectionDokument client: clients){
 			client.stop();
-			
 		}
 		answerHandler.stop();
-		stopAllServer();
+
 	}
 	public void stopClient(UID connectionID) {
 		clientMap.get(connectionID).stop();

@@ -67,8 +67,7 @@ public class ClientConnectionDokument implements Runnable{
 			    }
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			//e.printStackTrace();
+			buffer.addMessageIntoInput(new NetworkToken("QUIT", clientId, getIP()));
 		} finally {
 			stop();
 			clientMap.remove(clientId);

@@ -33,12 +33,13 @@ public class MainClass {
 		    System.out.println("[Shutdown thread] Shutting down");
 		    clientManager.stop();
 		    serverManager.stop();
-		    
-		    try {
-				executor.awaitTermination(10, TimeUnit.SECONDS);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+		    while(!executor.isTerminated()) {
+				try {
+					executor.awaitTermination(10, TimeUnit.SECONDS);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 			System.out.println("Executor: " + executor.isTerminated());
 		    System.out.println("[Shutdown thread] Shutdown complete");
@@ -62,7 +63,7 @@ public class MainClass {
 		}
 		Set<Config> configs = ConfigReader.getFileInput(dataFolder);
 		clientManager = new ClientManager(executor, configs,5,512, mailDrop,1);
-		serverManager = new ServerManager(executor, 512, 8070, configs, 60, mailDrop);
+		serverManager = new ServerManager(executor, 512, 8070, configs, 30, mailDrop);
 
 	}
 }

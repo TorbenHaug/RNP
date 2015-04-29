@@ -52,7 +52,7 @@ public class Server implements Runnable{
             	OutputStream output;
 				try {
 					output = clientSocket.getOutputStream();
-					output.write(("ERROR too many clients connected").getBytes());
+					output.write(("-ERR too many clients connected").getBytes());
 	            	output.close();
 	            	System.out.println((new Date()).toString() + " Client from " + clientSocket.getInetAddress().getHostAddress() + 
 	            			" refused, because ther are too many clients");

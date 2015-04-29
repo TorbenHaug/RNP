@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import pop3.proxy.client.StopListener;
 import pop3.proxy.configReader.Config;
@@ -16,6 +18,7 @@ import utils.buffer.BufferImpl;
 import utils.buffer.InputBuffer;
 
 public class ServerManager {
+	private final ExecutorService clientExecutor = Executors.newCachedThreadPool();
 	private final ServerConnectionManager manager;
 	private final MessageDispatcher dispatcher;
 	private final Buffer<NetworkToken> buffer;
@@ -65,7 +68,7 @@ public class ServerManager {
 						return null;
 					}
 				}, lookedUsers, mailDrop);
-				executor.execute(conn);
+				clientExecutor.execute(new Thread(conn));
 				connections.put(token.getID(), conn);
 				return true;
 			}
@@ -76,6 +79,19 @@ public class ServerManager {
 	
 	
 	public void stop(){
+		manager.stopAllServer();
+		System.out.println("ClientsShutdown");
+		clientExecutor.shutdown();
+		System.out.println("Waiting for connected Clients");
+		while (!clientExecutor.isTerminated()) {
+			System.out.println("waiting...");
+			try {
+				clientExecutor.awaitTermination(1, TimeUnit.SECONDS);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		System.out.println("All Clients are disconnected");
 		manager.stop();
 		dispatcher.stop();
 		buffer.stop();

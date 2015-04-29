@@ -39,7 +39,8 @@ public class ClientConnection implements Runnable{
 	private final String mailDrop;
 	private String ownMailDrop;
 	private List<MailWrapper> currentMails = new ArrayList<>();
-	
+	private Thread runningThread;
+
 	public ClientConnection(UID connectionID, StopListener listener, OutputBuffer<NetworkToken> buffer, int timeOut, CheckUser checkUser, Map<UID, String> lookedUsers,String mailDrop) {
 		this.listener = listener;
 		this.connectionID = connectionID;
@@ -72,7 +73,7 @@ public class ClientConnection implements Runnable{
 					failLogin();
 				}
 			}else if(message.startsWith("QUIT")){
-				listener.stop(connectionID);
+				runningThread.interrupt();
 			}else{
 				sendMessage("-ERR Wrong Command");
 			}
@@ -88,7 +89,7 @@ public class ClientConnection implements Runnable{
 								Files.createDirectory(Paths.get(ownMailDrop));
 							} catch (IOException e) {
 								sendMessage("-ERR Internal Server Error");
-								listener.stop(connectionID);
+								runningThread.interrupt();
 							}
 						}
 				        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Paths.get(ownMailDrop))) {
@@ -104,7 +105,7 @@ public class ClientConnection implements Runnable{
 				            }
 				        } catch (IOException | NoSuchAlgorithmException ex) {
 				        	sendMessage("-ERR Internal Server Error");
-							listener.stop(connectionID);
+							runningThread.interrupt();
 				        }
 				        
 						sendMessage("+OK Welcome " + userName + ".");
@@ -120,7 +121,8 @@ public class ClientConnection implements Runnable{
 					failLogin();
 				}
 			}else if(message.startsWith("QUIT")){
-				listener.stop(connectionID);
+				System.out.println("Interupting");
+				runningThread.interrupt();
 			}else{
 				sendMessage("-ERR Wrong Command");
 			}
@@ -249,7 +251,7 @@ public class ClientConnection implements Runnable{
 						}
 					}
 				}
-				listener.stop(connectionID);
+				runningThread.interrupt();
 			}else{
 				sendMessage("-ERR Wrong Command");
 			}
@@ -266,16 +268,20 @@ public class ClientConnection implements Runnable{
 
 	@Override
 	public void run() {
+		synchronized(this){
+			this.runningThread = Thread.currentThread();
+		}
 		long timeLast = timeOut;
-		while((timeLast = ((lastUse - System.currentTimeMillis()) + timeOut)) > 0){
+		while(!runningThread.isInterrupted() && (timeLast = ((lastUse - System.currentTimeMillis()) + timeOut)) > 0){
 			//System.out.println(timeLast);
 			try {
-				Thread.sleep(timeLast);
+				runningThread.sleep(timeLast);
 			} catch (InterruptedException e) {
-				listener.stop(connectionID);
+				runningThread.interrupt();
 			}
 		}
 		listener.stop(connectionID);
+		System.out.println("Client has timed out");
 	}
 	private void sendMessage(String message){
 		lastUse = System.currentTimeMillis();
