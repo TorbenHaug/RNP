@@ -1,5 +1,6 @@
 package server.awk;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -177,13 +178,19 @@ public class ClientConnection implements Runnable{
 							sendMessage("-ERR no such message");
 						}else{
 							sendMessage("+OK message follows");
-							for(String part: currentMails.get(intId - 1).getSplitedMail()){
-								sendMessage(part);
+							BufferedReader br = Files.newBufferedReader(currentMails.get(intId - 1).getMail().toPath());
+							char[] cbuf = new char[510];
+							int round = 0;
+							int len = 0;
+							while((len = br.read(cbuf, round*510, 510)) > 0){
+								sendMessage(String.copyValueOf(cbuf, 0, len));
 							}
 							sendMessage(".");
 						}
 					}catch(NumberFormatException e){
 						sendMessage("-ERR " + msgId + " is not a number");
+					} catch (IOException e) {
+						sendMessage(".");
 					}
 				}
 			}else if(message.startsWith("DELE ")){
@@ -261,7 +268,7 @@ public class ClientConnection implements Runnable{
 	public void run() {
 		long timeLast = timeOut;
 		while((timeLast = ((lastUse - System.currentTimeMillis()) + timeOut)) > 0){
-			System.out.println(timeLast);
+			//System.out.println(timeLast);
 			try {
 				Thread.sleep(timeLast);
 			} catch (InterruptedException e) {
@@ -271,6 +278,7 @@ public class ClientConnection implements Runnable{
 		listener.stop(connectionID);
 	}
 	private void sendMessage(String message){
+		lastUse = System.currentTimeMillis();
 		buffer.addMessageIntoOutput(new NetworkToken(message, connectionID, "0.0.0.0"));
 	}
 	

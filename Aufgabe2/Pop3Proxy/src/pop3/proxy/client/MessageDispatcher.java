@@ -32,6 +32,7 @@ public class MessageDispatcher implements Runnable{
 	
 	public void stop(){
 		isStopped = true;
+		
 	}
 
 }

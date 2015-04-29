@@ -75,7 +75,7 @@ public class Connection implements Runnable{
 				// TODO Auto-generated catch block
 				//e.printStackTrace();
 			} finally {
-//				stop();
+				stop();
 				//ClientController.disconnectCurrentConnection();
 				//TODO: DisconnectHandling
 				connectionMap.remove(uid);

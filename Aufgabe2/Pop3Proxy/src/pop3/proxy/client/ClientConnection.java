@@ -34,8 +34,8 @@ public class ClientConnection{
 	private int failStat = 3;
 	private String uniqueMailName;
 	private int lineCount;
-	private static String correntDir = System.getProperty("user.dir");
-	private static final String filePath = correntDir + File.separator + ".." + File.separator + "doc" + File.separator;
+	private long lastExecution;
+	private final int maxSize = 5*1024*1024;
 	
 	public ClientConnection(UID connectionID, Config config, StopListener listener, InputBuffer<NetworkToken> buffer, String mailDrop) {
 		this.config = config;
@@ -43,6 +43,7 @@ public class ClientConnection{
 		this.connectionID = connectionID;
 		this.buffer = buffer;
 		this.mailDrop = mailDrop;
+		setLastExecution(System.currentTimeMillis());
 		
 		this.ownMailDrop = this.mailDrop + File.separator + config.getUser();
 		if(Files.notExists(Paths.get(ownMailDrop))){
@@ -62,7 +63,7 @@ public class ClientConnection{
 	 * @param message  the message which has to be handled 
 	 */
 	synchronized public void addMessage(String message){
-		System.out.println("Server" + message);
+		setLastExecution(System.currentTimeMillis());
 				
 		if (currentState == Connected){
 			connectingState(message);	
@@ -134,11 +135,32 @@ public class ClientConnection{
 	private void transactionState(String message){
 		if(message.startsWith(ok)){
 			String[] splitMessage = message.split(" ", 3);
-			numberOfMessages = Long.parseLong(splitMessage[1]);
-			if(!readingStart()){
-				System.out.println("Nothing to Read");
-				currentState = Update;
-				sendMessage("QUIT");
+			if(splitMessage.length == 3){
+				System.out.println(splitMessage[1]);
+				try{
+					numberOfMessages = Long.parseLong(splitMessage[1]);
+				}catch(NumberFormatException e){
+					failStat--;
+					if (failStat <= 0){
+						sendMessage("QUIT");
+						currentState = Update;
+					}else{
+						sendMessage("STAT");
+					}
+				}
+				if(!readingStart()){
+					//System.out.println("Nothing to Read");
+					currentState = Update;
+					sendMessage("QUIT");
+				}
+			}else{
+				failStat--;
+				if (failStat <= 0){
+					sendMessage("QUIT");
+					currentState = Update;
+				}else{
+					sendMessage("STAT");
+				}
 			}
 		}else{
 			failStat--;
@@ -178,14 +200,17 @@ public class ClientConnection{
 	private void readingState(String message){
 		lineCount++;
 		if(lineCount == 1){
-			if(!message.startsWith(ok)){
+			if(message.startsWith(err)){
 				currentState = Delete;
+				deleteState(message);
+			}else if(!message.startsWith(ok)){
+				lineCount--;
 			}
 		}else{
 			if(!message.equals(".\r\n")){
 				writeToFile(message);
 			}else{
-				sendMessage("DELE" + messageCount);
+				sendMessage("DELE " + messageCount);
 				currentState = Delete;
 			}
 		}
@@ -196,10 +221,12 @@ public class ClientConnection{
 	 * @param message
 	 */
 	private void deleteState(String message){
-		if(!readingStart()){
-			System.out.println("Nothing to Read");
-			currentState = Update;
-			sendMessage("QUIT");
+		if(message.startsWith(ok)||message.startsWith(err)){
+			if(!readingStart()){
+				//System.out.println("Nothing to Read");
+				currentState = Update;
+				sendMessage("QUIT");
+			}
 		}
 	}
 	
@@ -210,7 +237,7 @@ public class ClientConnection{
 	private void writeToFile(String message){
 		try { 
 			File file = new File(ownMailDrop + File.separator + "file" + uniqueMailName + ".txt");
-			System.out.println(" this is the directory of the file: " + file.toString());
+			//System.out.println(" this is the directory of the file: " + file.toString());
 			
 			if (!file.exists()) {
 				file.createNewFile();
@@ -251,7 +278,7 @@ public class ClientConnection{
 	
 	private boolean failLogin(){
 		maxOfTry--;
-		System.out.println(maxOfTry);
+		//System.out.println(maxOfTry);
 		if (maxOfTry <= 0){
 			sendMessage("QUIT");
 			currentState = Update;
@@ -259,6 +286,15 @@ public class ClientConnection{
 		}
 		return false;
 	}
+
+	public synchronized long getLastExecution() {
+		return lastExecution;
+	}
+
+	public synchronized void setLastExecution(long lastExecution) {
+		this.lastExecution = lastExecution;
+	}
+	
 	
 	
 }

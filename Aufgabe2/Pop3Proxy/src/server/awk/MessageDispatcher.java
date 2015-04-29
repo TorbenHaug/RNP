@@ -27,7 +27,7 @@ public class MessageDispatcher implements Runnable{
 		while(!isStopped ){
 			NetworkToken token = buffer.getMessageFromInput();
 			if(token != null){
-				System.out.println(token.getMessage());
+				//System.out.println(token.getMessage());
 				if(token.getMessage().equals("CONN")){
 					if(!create.createClient(token)){
 						clientDisconnector.stop(token.getID());
