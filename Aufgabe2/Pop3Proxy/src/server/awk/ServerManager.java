@@ -82,9 +82,8 @@ public class ServerManager {
 		manager.stopAllServer();
 		System.out.println("ClientsShutdown");
 		clientExecutor.shutdown();
-		System.out.println("Waiting for connected Clients");
 		while (!clientExecutor.isTerminated()) {
-			System.out.println("waiting...");
+			System.out.println("Waiting for connected Clients");
 			try {
 				clientExecutor.awaitTermination(1, TimeUnit.SECONDS);
 			} catch (InterruptedException e) {

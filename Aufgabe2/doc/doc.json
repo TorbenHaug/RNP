@@ -1,17 +1,17 @@
 { 
 	"data": [
 		{
-			"user" : "Torben",
+			"user" : "torben@haug.de",
 			"pass" : "12345",
 			"server" : "127.0.0.1",
-			"port" : 8071,
+			"port" : 110,
 			"timeInterval" : 30
 		},
 		{
-			"user" : "Louisa",
+			"user" : "louisa@haug.de",
 			"pass" : "1435",
 			"server" : "127.0.0.1",
-			"port" : 8073,
+			"port" : 1101,
 			"timeInterval" : 30
 		}
 	]

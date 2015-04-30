@@ -28,13 +28,15 @@ public class Connection implements Runnable{
 	private final int maxLineSize;
 	private boolean isQuited = false;
 	private final StopListener listener;
+	private final StopListener awkListener;
 	
-	public Connection(String adress, int port, Buffer<NetworkToken> buffer, Map<UID, Connection> connectionMap, int timeOut, int maxLineSize, StopListener listener) throws UnknownHostException, IOException {
+	public Connection(String adress, int port, Buffer<NetworkToken> buffer, Map<UID, Connection> connectionMap, int maxLineSize, StopListener listener, StopListener awkListener) throws UnknownHostException, IOException {
+		this.awkListener = awkListener;
 		this.listener = listener;
 		this.maxLineSize = maxLineSize;
 		this.socket = new Socket();
 		try{
-			socket.connect(new InetSocketAddress(adress, port), timeOut);
+			socket.connect(new InetSocketAddress(adress, port));
 		}catch(SocketTimeoutException e){
 			stop();
 		}
@@ -65,6 +67,7 @@ public class Connection implements Runnable{
 				    line+= (char) sign;
 				    if (line.length() >= maxLineSize){
 				    	System.out.println("ERROR Server sendet zu viele Daten, disconnect");
+						awkListener.stop(uid);
 				    	listener.stop(uid);
 				    }else if(line.endsWith("\r\n")){
 				    	buffer.addMessageIntoOutput(new NetworkToken(line, uid, getIP()));
@@ -79,6 +82,7 @@ public class Connection implements Runnable{
 				// TODO Auto-generated catch block
 				//e.printStackTrace();
 			} finally {
+				awkListener.stop(uid);
 				listener.stop(uid);
 				//ClientController.disconnectCurrentConnection();
 				//TODO: DisconnectHandling

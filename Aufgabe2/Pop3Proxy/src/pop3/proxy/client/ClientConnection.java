@@ -273,6 +273,7 @@ public class ClientConnection{
 	}
 
 	private void sendMessage(String message){
+		setLastExecution(System.currentTimeMillis());
 		buffer.addMessageIntoInput(new NetworkToken(message, connectionID, config.getServer()));
 	}
 	

@@ -25,26 +25,27 @@ public class MainClass {
 	
 	static class ShutdownThread extends Thread {
 		  	  
-		  public ShutdownThread() {
-		    super();
-		  }
-		   
-		  public void run() {
-		    System.out.println("[Shutdown thread] Shutting down");
-		    clientManager.stop();
-		    serverManager.stop();
-		    while(!executor.isTerminated()) {
+		public ShutdownThread() {
+		super();
+		}
+
+		public void run() {
+			System.out.println("[Shutdown thread] Shutting down");
+			executor.shutdown();
+			clientManager.stop();
+			serverManager.stop();
+			while(!executor.isTerminated()) {
 				try {
-					executor.awaitTermination(10, TimeUnit.SECONDS);
+				executor.awaitTermination(10, TimeUnit.SECONDS);
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 				}
 			}
 			System.out.println("Executor: " + executor.isTerminated());
-		    System.out.println("[Shutdown thread] Shutdown complete");
-		  }
+			System.out.println("[Shutdown thread] Shutdown complete");
 		}
+	}
 	
 	public static void main(String[] args) throws IOException {
 		try {
@@ -62,7 +63,7 @@ public class MainClass {
 			Files.createDirectory(Paths.get(mailDrop));
 		}
 		Set<Config> configs = ConfigReader.getFileInput(dataFolder);
-		clientManager = new ClientManager(executor, configs,5,512, mailDrop,1);
+		clientManager = new ClientManager(executor, configs,30,512, mailDrop,1);
 		serverManager = new ServerManager(executor, 512, 8070, configs, 30, mailDrop);
 
 	}

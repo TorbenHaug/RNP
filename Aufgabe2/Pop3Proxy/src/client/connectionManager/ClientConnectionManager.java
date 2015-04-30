@@ -19,12 +19,10 @@ public class ClientConnectionManager {
 	private final ExecutorService executor;
 	private final Map<UID, Connection> connectionMap;
 	private final ClientAnswerHandler answerHandler;
-	private final int timeOut;
 	private final int maxLineSize;
 	private final StopListener listener;
 
-	public ClientConnectionManager(Buffer<NetworkToken> buffer, ExecutorService executor, int timeOut, int maxLineSize) {
-		this.timeOut = timeOut*1000;
+	public ClientConnectionManager(Buffer<NetworkToken> buffer, ExecutorService executor, int maxLineSize) {
 		this.maxLineSize = maxLineSize;
 		this.buffer = buffer;
 		this.executor = executor;
@@ -41,8 +39,8 @@ public class ClientConnectionManager {
 			}
 		};
 	}
-	public UID connect(String adress, int port) throws UnknownHostException, IOException{
-		Connection connection = new Connection(adress, port, buffer, connectionMap, timeOut, maxLineSize, listener);
+	public UID connect(String adress, int port, StopListener awklistener) throws UnknownHostException, IOException{
+		Connection connection = new Connection(adress, port, buffer, connectionMap, maxLineSize, listener, awklistener);
 		executor.execute(connection);
 		connectionMap.put(connection.getUid(), connection);
 		return connection.getUid();
