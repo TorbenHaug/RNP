@@ -110,7 +110,7 @@ public class ClientManager {
 									System.out.println("Release " + accountConfig.getUser());
 									runningMailClients.release();
 									System.out.println("Connection " + accountConfig.getUser() + " is waiting " + accountConfig.getTimeInterval() + " sec");
-									while ((accountConfig.getTimeInterval()*1000) >
+									while (!isStopped && (accountConfig.getTimeInterval()*1000) >
 											(deltaLastExecution = (System.currentTimeMillis() - connection.getLastExecution()))) {
 										try {
 											Thread.sleep((accountConfig.getTimeInterval() * 1000) - deltaLastExecution);
@@ -118,18 +118,14 @@ public class ClientManager {
 											if(isStopped){
 												//TimeOut Handling Server sollte innerhalb von 5 sec antworten
 												while(connections.containsKey(connectionID) &&
-														(deltaLastExecution = (System.currentTimeMillis() - connection.getLastExecution())) < connectionTimeOut){
+														(deltaLastExecution = (System.currentTimeMillis() - connection.getLastExecution())) < connectionTimeOut) {
 													try {
 														Thread.sleep(connectionTimeOut - deltaLastExecution);
-													}catch (InterruptedException e1){
+													} catch (InterruptedException e1) {
 
 													}
 
 												}
-												manager.stopConnection(connectionID);
-												connections.remove(connectionID);
-												System.out.println("Release " + accountConfig.getUser());
-												runningMailClients.release();
 												Thread.currentThread().interrupt();
 											}
 										}
