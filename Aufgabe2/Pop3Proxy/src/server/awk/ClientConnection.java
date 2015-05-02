@@ -46,9 +46,10 @@ public class ClientConnection implements Runnable{
 		this.lastUse = System.currentTimeMillis(); 
 		this.checkUser = checkUser;
 		this.failedLogins = 0;
-		sendMessage("+OK Hello to the pop3server of Louisa and Torben.");
 		this.lookedUsers = lookedUsers;
 		this.mailDrop = mailDrop;
+		sendMessage("+OK Hello to the pop3server of Louisa and Torben.");
+
 	}
 	
 	public void addMessage(String message){
@@ -178,11 +179,15 @@ public class ClientConnection implements Runnable{
 						}else{
 							sendMessage("+OK message follows");
 							BufferedReader br = Files.newBufferedReader(currentMails.get(intId - 1).getMail().toPath());
-							char[] cbuf = new char[510];
-							int round = 0;
-							int len = 0;
-							while((len = br.read(cbuf, round*510, 510)) > 0){
-								sendMessage(String.copyValueOf(cbuf, 0, len));
+							//char[] cbuf = new char[510];
+							String sentLine = "";
+							int sign = 0;
+							while((sign = br.read()) != -1){
+								sentLine += (char) sign;
+								if(sentLine.endsWith("\r\n")) {
+									sendMessage(sentLine.substring(0,sentLine.length()-2));
+									sentLine = "";
+								}
 							}
 							sendMessage(".");
 						}

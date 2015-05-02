@@ -89,7 +89,7 @@ public class ClientConnectionDokument implements Runnable{
 		return clientId;
 	}
 	public synchronized void sendMessage(String message){
-		message += "\n";
+		message += "\r\n";
 		OutputStream output;
 		try {
 			output = clientSocket.getOutputStream();
