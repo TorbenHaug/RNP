@@ -12,20 +12,17 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 
 import static server.awk.State.*;
-import client.connectionManager.ClientConnectionManager;
+
 import pop3.proxy.client.StopListener;
-import pop3.proxy.configReader.Config;
+import pop3.proxy.configReader.AccountConfig;
 import utils.adt.NetworkToken;
-import utils.buffer.InputBuffer;
 import utils.buffer.OutputBuffer;
 
 public class ClientConnection implements Runnable{
 
-	private Config config;
+	private AccountConfig accountConfig;
 	private final StopListener listener;
 	private final UID connectionID;
 	private final OutputBuffer<NetworkToken> buffer;
@@ -79,11 +76,11 @@ public class ClientConnection implements Runnable{
 			}
 		}else if(currentState == Pass){
 			if(message.startsWith("PASS ")){
-				if((config = checkUser.checkPass(userName, message.substring(message.indexOf(" ") + 1, message.length()))) != null){
-					if(!lookedUsers.containsValue(config.getUser())){
-						lookedUsers.put(connectionID, config.getUser());
+				if((accountConfig = checkUser.checkPass(userName, message.substring(message.indexOf(" ") + 1, message.length()))) != null){
+					if(!lookedUsers.containsValue(accountConfig.getUser())){
+						lookedUsers.put(connectionID, accountConfig.getUser());
 						currentState = LoggedIn;
-						ownMailDrop = mailDrop + File.separator + config.getUser();
+						ownMailDrop = mailDrop + File.separator + accountConfig.getUser();
 						if(Files.notExists(Paths.get(ownMailDrop))){
 							try {
 								Files.createDirectory(Paths.get(ownMailDrop));

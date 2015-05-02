@@ -1,10 +1,10 @@
 package server.awk;
 
-import pop3.proxy.configReader.Config;
+import pop3.proxy.configReader.AccountConfig;
 
 public interface CheckUser {
 	
 	public boolean userExists(String userName);
-	public Config checkPass(String userName, String pass); 
+	public AccountConfig checkPass(String userName, String pass);
 	
 }

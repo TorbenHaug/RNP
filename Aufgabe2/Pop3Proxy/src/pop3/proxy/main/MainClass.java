@@ -10,8 +10,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import pop3.proxy.client.ClientManager;
-import pop3.proxy.configReader.Config;
+import pop3.proxy.configReader.AccountConfig;
 import pop3.proxy.configReader.ConfigReader;
+import pop3.proxy.configReader.GeneralConfig;
 import server.awk.ServerManager;
 
 
@@ -62,9 +63,50 @@ public class MainClass {
 		if(Files.notExists(Paths.get(mailDrop))){
 			Files.createDirectory(Paths.get(mailDrop));
 		}
-		Set<Config> configs = ConfigReader.getFileInput(dataFolder);
-		clientManager = new ClientManager(executor, configs,30,512, mailDrop,1);
-		serverManager = new ServerManager(executor, 512, 8070, configs, 30, mailDrop);
+		GeneralConfig generalConfig = new GeneralConfig() {
+			@Override
+			public int getServerport() {
+				return 8070;
+			}
+
+			@Override
+			public int getMaxServerConnections() {
+				return 3;
+			}
+
+			@Override
+			public int getServerTimeOut() {
+				return 30;
+			}
+
+			@Override
+			public int getMaxSignsPerLineServer() {
+				return 70;
+			}
+
+			@Override
+			public int getMaxClientConnections() {
+				return 1;
+			}
+
+			@Override
+			public int getClientTimeout() {
+				return 30;
+			}
+
+			@Override
+			public int getMaxSignsPerLineClient() {
+				return 512;
+			}
+
+			@Override
+			public int getMaxMailSize() {
+				return 5*1024*1024;
+			}
+		};
+		Set<AccountConfig> accountConfigs = ConfigReader.getFileInput(dataFolder);
+		clientManager = new ClientManager(executor, accountConfigs,generalConfig.getClientTimeout(),generalConfig.getMaxSignsPerLineClient(), mailDrop,generalConfig.getMaxClientConnections());
+		serverManager = new ServerManager(executor, generalConfig.getMaxSignsPerLineServer(), generalConfig.getServerport(), accountConfigs, generalConfig.getServerTimeOut(), mailDrop, generalConfig.getMaxServerConnections());
 
 	}
 }

@@ -1,14 +1,11 @@
 package pop3.proxy.configReader;
 
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
 import org.json.simple.JSONArray;
@@ -22,8 +19,8 @@ public class ConfigReader {
 	 * get data json file in current directory 
 	 * */
 
-	public static Set<Config> getFileInput(String dataFolder) throws IOException{
-		Set<Config> dataSet = new HashSet<>();
+	public static Set<AccountConfig> getFileInput(String dataFolder) throws IOException{
+		Set<AccountConfig> dataSet = new HashSet<>();
 		
 		try {
 			FileReader reader = new FileReader(dataFolder + "doc.json");
@@ -54,7 +51,7 @@ public class ConfigReader {
 			    
 			    System.out.println("");
 				
-			    Config userData = new ConfigsImpl(user, pass, server, port, timeInterval);
+			    AccountConfig userData = new ConfigsImpl(user, pass, server, port, timeInterval);
 			    
 			    dataSet.add(userData);
 			 }

@@ -13,13 +13,13 @@ import java.rmi.server.UID;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import pop3.proxy.configReader.Config;
+import pop3.proxy.configReader.AccountConfig;
 import utils.adt.NetworkToken;
 import utils.buffer.InputBuffer;
 
 public class ClientConnection{
 
-	private final Config config;
+	private final AccountConfig accountConfig;
 	private final StopListener listener;
 	private final UID connectionID;
 	private final InputBuffer<NetworkToken> buffer;
@@ -37,15 +37,15 @@ public class ClientConnection{
 	private long lastExecution;
 	private final int maxSize = 5*1024*1024;
 	
-	public ClientConnection(UID connectionID, Config config, StopListener listener, InputBuffer<NetworkToken> buffer, String mailDrop) {
-		this.config = config;
+	public ClientConnection(UID connectionID, AccountConfig accountConfig, StopListener listener, InputBuffer<NetworkToken> buffer, String mailDrop) {
+		this.accountConfig = accountConfig;
 		this.listener = listener;
 		this.connectionID = connectionID;
 		this.buffer = buffer;
 		this.mailDrop = mailDrop;
 		setLastExecution(System.currentTimeMillis());
 		
-		this.ownMailDrop = this.mailDrop + File.separator + config.getUser();
+		this.ownMailDrop = this.mailDrop + File.separator + accountConfig.getUser();
 		if(Files.notExists(Paths.get(ownMailDrop))){
 			try {
 				Files.createDirectory(Paths.get(ownMailDrop));
@@ -90,7 +90,7 @@ public class ClientConnection{
 	private void connectingState(String message){
 		if (message.startsWith(ok)){
 			currentState = User;
-			sendMessage("USER " + config.getUser());
+			sendMessage("USER " + accountConfig.getUser());
 		} else if (message.startsWith(err)){
 			listener.stop(connectionID);
 		}	
@@ -103,11 +103,11 @@ public class ClientConnection{
 	private void userState(String message){
 		if (message.startsWith(ok)){
 			currentState = Pass;
-			sendMessage("PASS " + config.getPass());
+			sendMessage("PASS " + accountConfig.getPass());
 		} else if (message.startsWith(err)){
 			if (!failLogin()){
 				currentState = User;
-				sendMessage("USER " + config.getUser());
+				sendMessage("USER " + accountConfig.getUser());
 			}
 		}	
 	}
@@ -123,7 +123,7 @@ public class ClientConnection{
 		} else if (message.startsWith(err)){
 			if (!failLogin()){
 				currentState = User;
-				sendMessage("USER " + config.getUser());
+				sendMessage("USER " + accountConfig.getUser());
 			}
 		}	
 	}
@@ -274,7 +274,7 @@ public class ClientConnection{
 
 	private void sendMessage(String message){
 		setLastExecution(System.currentTimeMillis());
-		buffer.addMessageIntoInput(new NetworkToken(message, connectionID, config.getServer()));
+		buffer.addMessageIntoInput(new NetworkToken(message, connectionID, accountConfig.getServer()));
 	}
 	
 	private boolean failLogin(){
