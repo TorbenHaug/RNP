@@ -75,7 +75,7 @@ public class MainClass {
 			}
 
 			@Override
-			public int getServerTimeOut() {
+			public int getServerTimeout() {
 				return 30;
 			}
 
@@ -105,8 +105,9 @@ public class MainClass {
 			}
 		};
 		Set<AccountConfig> accountConfigs = ConfigReader.getFileInput(dataFolder);
+		GeneralConfig generalConfigs = ConfigReader.getFileInputForGeneral(dataFolder);
 		clientManager = new ClientManager(executor, accountConfigs,generalConfig.getClientTimeout(),generalConfig.getMaxSignsPerLineClient(), mailDrop,generalConfig.getMaxClientConnections());
-		serverManager = new ServerManager(executor, generalConfig.getMaxSignsPerLineServer(), generalConfig.getServerport(), accountConfigs, generalConfig.getServerTimeOut(), mailDrop, generalConfig.getMaxServerConnections());
+		serverManager = new ServerManager(executor, generalConfig.getMaxSignsPerLineServer(), generalConfig.getServerport(), accountConfigs, generalConfig.getServerTimeout(), mailDrop, generalConfig.getMaxServerConnections());
 
 	}
 }

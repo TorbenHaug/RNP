@@ -6,7 +6,7 @@ package pop3.proxy.configReader;
 public interface GeneralConfig {
     public int getServerport();
     public int getMaxServerConnections();
-    public int getServerTimeOut();
+    public int getServerTimeout();
     public int getMaxSignsPerLineServer();
 
     public int getMaxClientConnections();
