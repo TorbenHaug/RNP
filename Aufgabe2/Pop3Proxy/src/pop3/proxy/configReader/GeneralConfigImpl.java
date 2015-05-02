@@ -23,7 +23,7 @@ public class GeneralConfigImpl implements GeneralConfig {
 		 this.maxClientConnections = maxClientConnections; 
 		 this.clientTimeout = clientTimeout; 
 		 this.maxSignsPerLineClient = maxSignsPerLineClient; 
-		 this.maxMailSize = maxMailSize ;
+		 this.maxMailSize = maxMailSize * 1024 * 1024;
 		
 	}
 	
