@@ -63,50 +63,50 @@ public class MainClass {
 		if(Files.notExists(Paths.get(mailDrop))){
 			Files.createDirectory(Paths.get(mailDrop));
 		}
-		GeneralConfig generalConfig = new GeneralConfig() {
-			@Override
-			public int getServerport() {
-				return 8070;
-			}
-
-			@Override
-			public int getMaxServerConnections() {
-				return 3;
-			}
-
-			@Override
-			public int getServerTimeout() {
-				return 30;
-			}
-
-			@Override
-			public int getMaxSignsPerLineServer() {
-				return 70;
-			}
-
-			@Override
-			public int getMaxClientConnections() {
-				return 1;
-			}
-
-			@Override
-			public int getClientTimeout() {
-				return 30;
-			}
-
-			@Override
-			public int getMaxSignsPerLineClient() {
-				return 512;
-			}
-
-			@Override
-			public int getMaxMailSize() {
-				return 5*1024*1024;
-			}
-		};
+//		GeneralConfig generalConfig = new GeneralConfig() {
+//			@Override
+//			public int getServerport() {
+//				return 8070;
+//			}
+//
+//			@Override
+//			public int getMaxServerConnections() {
+//				return 3;
+//			}
+//
+//			@Override
+//			public int getServerTimeout() {
+//				return 30;
+//			}
+//
+//			@Override
+//			public int getMaxSignsPerLineServer() {
+//				return 70;
+//			}
+//
+//			@Override
+//			public int getMaxClientConnections() {
+//				return 1;
+//			}
+//
+//			@Override
+//			public int getClientTimeout() {
+//				return 30;
+//			}
+//
+//			@Override
+//			public int getMaxSignsPerLineClient() {
+//				return 512;
+//			}
+//
+//			@Override
+//			public int getMaxMailSize() {
+//				return 5*1024*1024;
+//			}
+//		};
 		Set<AccountConfig> accountConfigs = ConfigReader.getFileInput(dataFolder);
-		GeneralConfig generalConfigs = ConfigReader.getFileInputForGeneral(dataFolder);
-		clientManager = new ClientManager(executor, accountConfigs,generalConfig.getClientTimeout(),generalConfig.getMaxSignsPerLineClient(), mailDrop,generalConfig.getMaxClientConnections());
+		GeneralConfig generalConfig = ConfigReader.getFileInputForGeneral(dataFolder);
+		clientManager = new ClientManager(executor, accountConfigs,generalConfig.getClientTimeout(),generalConfig.getMaxSignsPerLineClient(), mailDrop,generalConfig.getMaxClientConnections(), generalConfig.getMaxMailSize());
 		serverManager = new ServerManager(executor, generalConfig.getMaxSignsPerLineServer(), generalConfig.getServerport(), accountConfigs, generalConfig.getServerTimeout(), mailDrop, generalConfig.getMaxServerConnections());
 
 	}

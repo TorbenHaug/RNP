@@ -30,7 +30,7 @@
 			"maxClientConnections" : 1,
 			"clientTimeout" : 20,
 			"maxSignsPerLineClient" : 512,
-			"maxMailSize" : 5,
+			"maxMailSize" : 40,
 		}
 	]
 	

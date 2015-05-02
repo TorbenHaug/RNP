@@ -132,7 +132,6 @@ public class ConfigReader {
 					maxClientConnections, clientTimeout, maxSignsPerLineClient, maxMailSize);
 		    
 		   
-			
 		} catch (FileNotFoundException e) {
 			throw new IOException("The File does not exists" + e);
 		} catch (IOException e) {

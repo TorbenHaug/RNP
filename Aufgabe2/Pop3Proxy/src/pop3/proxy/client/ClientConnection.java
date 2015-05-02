@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.rmi.server.UID;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 
 import pop3.proxy.configReader.AccountConfig;
 import utils.adt.NetworkToken;
@@ -28,16 +29,18 @@ public class ClientConnection{
 	private final String mailDrop;
 	private final String ownMailDrop;
 	private ClientState currentState = Connected;
-	private long numberOfMessages;
-	private long messageCount = 0;
+	private int messageCount = 0;
 	private int maxOfTry= 5;
 	private int failStat = 3;
 	private String uniqueMailName;
 	private int lineCount;
 	private long lastExecution;
-	private final int maxSize = 5*1024*1024;
+	private final int maxSize;
+	private ArrayList<Integer> listOfMails;
+	private int messageLength;
 	
-	public ClientConnection(UID connectionID, AccountConfig accountConfig, StopListener listener, InputBuffer<NetworkToken> buffer, String mailDrop) {
+	public ClientConnection(UID connectionID, AccountConfig accountConfig, StopListener listener, InputBuffer<NetworkToken> buffer, String mailDrop, int maxMailSize) {
+		this.maxSize = maxMailSize;
 		this.accountConfig = accountConfig;
 		this.listener = listener;
 		this.connectionID = connectionID;
@@ -71,8 +74,8 @@ public class ClientConnection{
 			userState(message);
 		} else if (currentState == Pass){
 			passState(message);
-		} else if (currentState == Transaction){
-			transactionState(message);
+		} else if (currentState == List){
+			listState(message);
 		} else if (currentState == Reading){
 			readingState(message);	
 		} else if (currentState == Delete){
@@ -118,8 +121,9 @@ public class ClientConnection{
 	 */
 	private void passState(String message){
 		if (message.startsWith(ok)){
-			currentState = Transaction;
-			sendMessage("STAT");
+			this.listOfMails = new ArrayList<Integer>();
+			currentState = List;
+			sendMessage("LIST");
 		} else if (message.startsWith(err)){
 			if (!failLogin()){
 				currentState = User;
@@ -128,47 +132,32 @@ public class ClientConnection{
 		}	
 	}
 	
-	/**
-	 * 
-	 * @param splitMessage
-	 */
-	private void transactionState(String message){
+	
+	
+	private void listState(String message){
 		if(message.startsWith(ok)){
-			String[] splitMessage = message.split(" ", 3);
-			if(splitMessage.length == 3){
-				System.out.println(splitMessage[1]);
-				try{
-					numberOfMessages = Long.parseLong(splitMessage[1]);
-				}catch(NumberFormatException e){
-					failStat--;
-					if (failStat <= 0){
-						sendMessage("QUIT");
-						currentState = Update;
-					}else{
-						sendMessage("STAT");
-					}
-				}
+			currentState = List;
+		}else if(message.equals(".\r\n")){
+			try{
 				if(!readingStart()){
-					//System.out.println("Nothing to Read");
-					currentState = Update;
-					sendMessage("QUIT");
-				}
-			}else{
-				failStat--;
-				if (failStat <= 0){
 					sendMessage("QUIT");
 					currentState = Update;
-				}else{
-					sendMessage("STAT");
 				}
+			}catch(MailToLargeException e){
+				System.out.println("Mail of " + accountConfig.getUser() + " Mail size " + listOfMails.get(messageCount-1) + " Mail too long");
+				listState(message);
 			}
 		}else{
-			failStat--;
-			if (failStat <= 0){
-				sendMessage("QUIT");
-				currentState = Update;
+			message = message.substring(0, message.length() - 2);
+			String[] splitedMessage = message.split(" ");
+			if(splitedMessage.length == 2){
+				try{
+					this.listOfMails.add(Integer.parseInt(splitedMessage[1]));
+				}catch (NumberFormatException e){
+					this.listOfMails.add(Integer.MAX_VALUE);
+				}
 			}else{
-				sendMessage("STAT");
+				this.listOfMails.add(Integer.MAX_VALUE);
 			}
 		}
 	}
@@ -176,10 +165,17 @@ public class ClientConnection{
 	/**
 	 * 
 	 * @return
+	 * @throws MailToLargeException 
 	 */
-	private boolean readingStart(){
-		if(numberOfMessages>messageCount){
-			sendMessage("RETR " + (++messageCount));
+	private boolean readingStart() throws MailToLargeException{
+		
+		messageCount++;
+		if(listOfMails.size() >= messageCount && listOfMails.get(messageCount-1)>maxSize){
+			throw new MailToLargeException();
+		}
+		this.messageLength = 0;
+		if(listOfMails.size()>=messageCount){
+			sendMessage("RETR " + (messageCount));
 			this.lineCount = 0;
 			try {
 				uniqueMailName = md5Hash(new UID().toString() + new UID().toString() + new UID().toString());
@@ -210,8 +206,20 @@ public class ClientConnection{
 			if(!message.equals(".\r\n")){
 				writeToFile(message);
 			}else{
-				sendMessage("DELE " + messageCount);
-				currentState = Delete;
+				if(!(messageLength > maxSize)){
+					sendMessage("DELE " + messageCount);
+					currentState = Delete;
+				}else{
+					try{
+						if(!readingStart()){
+							sendMessage("QUIT");
+							currentState = Update;
+						}
+					}catch(MailToLargeException e){
+						System.out.println("Mail of " + accountConfig.getUser() + " Mail size " + listOfMails.get(messageCount-1) + " Mail too long");
+						readingState(message);
+					}
+				}
 			}
 		}
 	}
@@ -222,11 +230,17 @@ public class ClientConnection{
 	 */
 	private void deleteState(String message){
 		if(message.startsWith(ok)||message.startsWith(err)){
-			if(!readingStart()){
-				//System.out.println("Nothing to Read");
-				currentState = Update;
-				sendMessage("QUIT");
+			try{
+				if(!readingStart()){
+					//System.out.println("Nothing to Read");
+					currentState = Update;
+					sendMessage("QUIT");
+				}
+			}catch(MailToLargeException e){
+				System.out.println("Mail of " + accountConfig.getUser() + " Mail size " + listOfMails.get(messageCount-1) + " Mail too long");
+				deleteState(message);
 			}
+			
 		}
 	}
 	
@@ -236,18 +250,26 @@ public class ClientConnection{
 	 */
 	private void writeToFile(String message){
 		try { 
-			File file = new File(ownMailDrop + File.separator + "file" + uniqueMailName + ".txt");
-			//System.out.println(" this is the directory of the file: " + file.toString());
-			
-			if (!file.exists()) {
-				file.createNewFile();
+			this.messageLength += message.length();
+			if(messageLength > maxSize){
+				File file = new File(ownMailDrop + File.separator + "file" + uniqueMailName + ".txt");
+				if(file.exists()){
+					file.delete();
+					System.out.println("BETRUG!");
+				}
+			}else{
+				File file = new File(ownMailDrop + File.separator + "file" + uniqueMailName + ".txt");
+				//System.out.println(" this is the directory of the file: " + file.toString());
+				
+				if (!file.exists()) {
+					file.createNewFile();
+				}
+				 
+				FileWriter fileWriter = new FileWriter(file.getAbsoluteFile(), true);
+				BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+				bufferedWriter.append(message);
+				bufferedWriter.close();
 			}
-			 
-			FileWriter fileWriter = new FileWriter(file.getAbsoluteFile(), true);
-			BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-			bufferedWriter.append(message);
-			bufferedWriter.close();
-			
 		} catch (IOException e) {
 			System.out.println("something went wrong when writing to file " + e);
 		}

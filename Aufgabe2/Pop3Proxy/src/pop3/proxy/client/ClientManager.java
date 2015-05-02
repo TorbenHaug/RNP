@@ -26,8 +26,10 @@ public class ClientManager {
 	private final Semaphore runningMailClients;
 	private final ExecutorService clientExecuter;
 	private final int connectionTout;
+	private final int maxMailSize;
 
-	public ClientManager(ExecutorService executor, Set<AccountConfig> accountConfigs, int connectionTimeOut, int maxLineSize, String mailDrop, int maxConnections){
+	public ClientManager(ExecutorService executor, Set<AccountConfig> accountConfigs, int connectionTimeOut, int maxLineSize, String mailDrop, int maxConnections, int maxMailSize){
+		this.maxMailSize = maxMailSize;
 		this.connectionTout = connectionTimeOut * 1000;
 		this.clientExecuter = Executors.newCachedThreadPool();
 		this.runningMailClients = new Semaphore(maxConnections, true);
@@ -66,7 +68,7 @@ public class ClientManager {
 							try {
 								runningMailClients.acquire();
 								connectionID = manager.connect(accountConfig.getServer(), accountConfig.getPort(), listener);
-								ClientConnection connection = new ClientConnection(connectionID, accountConfig, listener,buffer, maildrop);
+								ClientConnection connection = new ClientConnection(connectionID, accountConfig, listener,buffer, maildrop, maxMailSize);
 								connections.put(connectionID, connection);
 								long deltaLastExecution;
 
