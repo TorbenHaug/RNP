@@ -3,6 +3,7 @@ package server.awk;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -178,7 +179,7 @@ public class ClientConnection implements Runnable{
 							sendMessage("-ERR no such message");
 						}else{
 							sendMessage("+OK message follows");
-							BufferedReader br = Files.newBufferedReader(currentMails.get(intId - 1).getMail().toPath());
+							BufferedReader br = Files.newBufferedReader(currentMails.get(intId - 1).getMail().toPath(), Charset.availableCharsets().get("UTF-8"));
 							//char[] cbuf = new char[510];
 							String sentLine = "";
 							int sign = 0;
