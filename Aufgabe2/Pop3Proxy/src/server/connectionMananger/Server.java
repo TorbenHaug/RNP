@@ -14,6 +14,7 @@ import utils.buffer.InputBuffer;
 
 public class Server implements Runnable{
 
+    private final int maxIncomingConnections;
     private int          serverPort   = 8080;
     private ServerSocket serverSocket = null;
     private boolean      isStopped    = false;
@@ -23,7 +24,8 @@ public class Server implements Runnable{
     private final InputBuffer<NetworkToken> buffer;
 	private final int maxLineSize;
 
-    public Server(int port, ExecutorService executor, Map<UID, ClientConnectionDokument> clientMap, InputBuffer<NetworkToken> buffer, int maxLineSize){
+    public Server(int port, ExecutorService executor, Map<UID, ClientConnectionDokument> clientMap, InputBuffer<NetworkToken> buffer, int maxLineSize, int maxIncomingConnection){
+        this.maxIncomingConnections = maxIncomingConnection;
         this.maxLineSize = maxLineSize;
     	this.serverPort = port;
         this.executor = executor;
@@ -48,7 +50,7 @@ public class Server implements Runnable{
                 throw new RuntimeException(
                     "Error accepting client connection", e);
             }
-            if (clientMap.size() >= 3){
+            if (clientMap.size() >= maxIncomingConnections){
             	OutputStream output;
 				try {
 					output = clientSocket.getOutputStream();

@@ -29,7 +29,7 @@ public class ServerManager {
 		this.mailDrop = dataFolder;
 		connections = new ConcurrentHashMap<UID, ClientConnection>();
 		buffer = new BufferImpl<NetworkToken>();
-		manager = new ServerConnectionManager(buffer, executor, maxLineSize);
+		manager = new ServerConnectionManager(buffer, executor, maxLineSize, maxIncomingConnectons);
 		clientDisconnector = new StopListener() {
 			
 			@Override
