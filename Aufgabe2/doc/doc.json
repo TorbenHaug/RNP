@@ -14,6 +14,24 @@
 			"port" : 1101,
 			"timeInterval" : 30
 		}
+	],
+	"configServer": [
+		{
+			"serverPort" : 8070,
+			"maxServerConnection" : 3,
+			"serverTimeout" : 20,
+			"maxSignsPerLineServer" : 512,
+			
+		}
+	],
+	
+	"configClient": [
+		{
+			"maxClientConnections" : 1,
+			"clientTimeout" : 20,
+			"maxSignsPerLineClient" : 512,
+			"maxMailSize" : 40,
+		}
 	]
 	
 }
@@ -21,3 +39,4 @@
 
 
 
+				

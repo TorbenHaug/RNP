@@ -1,7 +1,7 @@
 package pop3.proxy.configReader;
 
 
-class ConfigsImpl implements Config{
+class ConfigsImpl implements AccountConfig {
 	
 	String user;
 	String pass;

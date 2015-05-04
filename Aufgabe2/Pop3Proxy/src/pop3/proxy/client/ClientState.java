@@ -6,6 +6,7 @@ public enum ClientState {
 	User,
 	Pass,
 	Transaction,
+	List,
 	Reading,
 	Delete,
 	Update

@@ -1,7 +1,6 @@
 package server.awk;
 
 import java.rmi.server.UID;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -10,12 +9,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import pop3.proxy.client.StopListener;
-import pop3.proxy.configReader.Config;
+import pop3.proxy.configReader.AccountConfig;
 import server.connectionMananger.ServerConnectionManager;
 import utils.adt.NetworkToken;
 import utils.buffer.Buffer;
 import utils.buffer.BufferImpl;
-import utils.buffer.InputBuffer;
 
 public class ServerManager {
 	private final ExecutorService clientExecutor = Executors.newCachedThreadPool();
@@ -27,11 +25,11 @@ public class ServerManager {
 	private final Map<UID,String> lookedUsers;
 	private final String mailDrop;
 	
-	public ServerManager(ExecutorService executor, int maxLineSize, int port, Set<Config> configs,int timeOut, String dataFolder) {
+	public ServerManager(ExecutorService executor, int maxLineSize, int port, Set<AccountConfig> accountConfigs,int timeOut, String dataFolder, int maxIncomingConnectons) {
 		this.mailDrop = dataFolder;
 		connections = new ConcurrentHashMap<UID, ClientConnection>();
 		buffer = new BufferImpl<NetworkToken>();
-		manager = new ServerConnectionManager(buffer, executor, maxLineSize);
+		manager = new ServerConnectionManager(buffer, executor, maxLineSize, maxIncomingConnectons);
 		clientDisconnector = new StopListener() {
 			
 			@Override
@@ -50,7 +48,7 @@ public class ServerManager {
 					
 					@Override
 					public boolean userExists(String userName) {
-						for(Config config: configs){
+						for(AccountConfig config: accountConfigs){
 							if(config.getUser().equals(userName)){
 								return true;
 							}
@@ -59,8 +57,8 @@ public class ServerManager {
 					}
 					
 					@Override
-					public Config checkPass(String userName, String pass) {
-						for(Config config: configs){
+					public AccountConfig checkPass(String userName, String pass) {
+						for(AccountConfig config: accountConfigs){
 							if(config.getUser().equals(userName) && config.getPass().equals(pass)){
 								return config;
 							}

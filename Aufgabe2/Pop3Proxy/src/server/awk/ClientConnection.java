@@ -3,6 +3,7 @@ package server.awk;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,20 +13,17 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 
 import static server.awk.State.*;
-import client.connectionManager.ClientConnectionManager;
+
 import pop3.proxy.client.StopListener;
-import pop3.proxy.configReader.Config;
+import pop3.proxy.configReader.AccountConfig;
 import utils.adt.NetworkToken;
-import utils.buffer.InputBuffer;
 import utils.buffer.OutputBuffer;
 
 public class ClientConnection implements Runnable{
 
-	private Config config;
+	private AccountConfig accountConfig;
 	private final StopListener listener;
 	private final UID connectionID;
 	private final OutputBuffer<NetworkToken> buffer;
@@ -49,9 +47,10 @@ public class ClientConnection implements Runnable{
 		this.lastUse = System.currentTimeMillis(); 
 		this.checkUser = checkUser;
 		this.failedLogins = 0;
-		sendMessage("+OK Hello to the pop3server of Louisa and Torben.");
 		this.lookedUsers = lookedUsers;
 		this.mailDrop = mailDrop;
+		sendMessage("+OK Hello to the pop3server of Louisa and Torben.");
+
 	}
 	
 	public void addMessage(String message){
@@ -79,11 +78,11 @@ public class ClientConnection implements Runnable{
 			}
 		}else if(currentState == Pass){
 			if(message.startsWith("PASS ")){
-				if((config = checkUser.checkPass(userName, message.substring(message.indexOf(" ") + 1, message.length()))) != null){
-					if(!lookedUsers.containsValue(config.getUser())){
-						lookedUsers.put(connectionID, config.getUser());
+				if((accountConfig = checkUser.checkPass(userName, message.substring(message.indexOf(" ") + 1, message.length()))) != null){
+					if(!lookedUsers.containsValue(accountConfig.getUser())){
+						lookedUsers.put(connectionID, accountConfig.getUser());
 						currentState = LoggedIn;
-						ownMailDrop = mailDrop + File.separator + config.getUser();
+						ownMailDrop = mailDrop + File.separator + accountConfig.getUser();
 						if(Files.notExists(Paths.get(ownMailDrop))){
 							try {
 								Files.createDirectory(Paths.get(ownMailDrop));
@@ -180,12 +179,16 @@ public class ClientConnection implements Runnable{
 							sendMessage("-ERR no such message");
 						}else{
 							sendMessage("+OK message follows");
-							BufferedReader br = Files.newBufferedReader(currentMails.get(intId - 1).getMail().toPath());
-							char[] cbuf = new char[510];
-							int round = 0;
-							int len = 0;
-							while((len = br.read(cbuf, round*510, 510)) > 0){
-								sendMessage(String.copyValueOf(cbuf, 0, len));
+							BufferedReader br = Files.newBufferedReader(currentMails.get(intId - 1).getMail().toPath(), Charset.availableCharsets().get("UTF-8"));
+							//char[] cbuf = new char[510];
+							String sentLine = "";
+							int sign = 0;
+							while((sign = br.read()) != -1){
+								sentLine += (char) sign;
+								if(sentLine.endsWith("\r\n")) {
+									sendMessage(sentLine.substring(0,sentLine.length()-2));
+									sentLine = "";
+								}
 							}
 							sendMessage(".");
 						}

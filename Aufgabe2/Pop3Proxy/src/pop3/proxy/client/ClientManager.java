@@ -1,25 +1,17 @@
 package pop3.proxy.client;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.rmi.server.UID;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.*;
 
-import javax.naming.TimeLimitExceededException;
-
-import pop3.proxy.configReader.Config;
+import pop3.proxy.configReader.AccountConfig;
 import utils.adt.NetworkToken;
 import utils.buffer.Buffer;
 import utils.buffer.BufferImpl;
-import utils.buffer.InputBuffer;
 import client.connectionManager.ClientConnectionManager;
 
 public class ClientManager {
@@ -34,8 +26,10 @@ public class ClientManager {
 	private final Semaphore runningMailClients;
 	private final ExecutorService clientExecuter;
 	private final int connectionTout;
+	private final int maxMailSize;
 
-	public ClientManager(ExecutorService executor, Set<Config> configs, int connectionTimeOut, int maxLineSize, String mailDrop, int maxConnections){
+	public ClientManager(ExecutorService executor, Set<AccountConfig> accountConfigs, int connectionTimeOut, int maxLineSize, String mailDrop, int maxConnections, int maxMailSize){
+		this.maxMailSize = maxMailSize;
 		this.connectionTout = connectionTimeOut * 1000;
 		this.clientExecuter = Executors.newCachedThreadPool();
 		this.runningMailClients = new Semaphore(maxConnections, true);
@@ -49,7 +43,7 @@ public class ClientManager {
 		executor.execute(dispatcher);
 
 		
-		for(Config config: configs){
+		for(AccountConfig accountConfig : accountConfigs){
 				Stopable newThread = new Stopable() {
 					public boolean isStopped = false;
 					Thread runningThread;
@@ -73,13 +67,13 @@ public class ClientManager {
 							UID connectionID;
 							try {
 								runningMailClients.acquire();
-								connectionID = manager.connect(config.getServer(), config.getPort(), listener);
-								ClientConnection connection = new ClientConnection(connectionID, config, listener,buffer, maildrop);
+								connectionID = manager.connect(accountConfig.getServer(), accountConfig.getPort(), listener);
+								ClientConnection connection = new ClientConnection(connectionID, accountConfig, listener,buffer, maildrop, maxMailSize);
 								connections.put(connectionID, connection);
 								long deltaLastExecution;
 
 								//TimeOut Handling Server sollte innerhalb von 5 sec antworten
-								System.out.println("Receiving Mails for " + config.getUser());
+								System.out.println("Receiving Mails for " + accountConfig.getUser());
 								while(connections.containsKey(connectionID) &&
 										(deltaLastExecution = (System.currentTimeMillis() - connection.getLastExecution())) < connectionTout){
 									try {
@@ -98,7 +92,7 @@ public class ClientManager {
 											}
 											manager.stopConnection(connectionID);
 											connections.remove(connectionID);
-											System.out.println("Release " + config.getUser());
+											System.out.println("Release " + accountConfig.getUser());
 											runningMailClients.release();
 											Thread.currentThread().interrupt();
 										}
@@ -106,43 +100,39 @@ public class ClientManager {
 
 								}
 								if(connections.containsKey(connectionID)){
-									System.out.println("Connection " + config.getUser() + " doesn't answer.");
+									System.out.println("Connection " + accountConfig.getUser() + " doesn't answer.");
 									manager.stopConnection(connectionID);
 									connections.remove(connectionID);
-									System.out.println("Release " + config.getUser());
+									System.out.println("Release " + accountConfig.getUser());
 									runningMailClients.release();
 								}else{
 									//Wait period
-									System.out.println("Release " + config.getUser());
+									System.out.println("Release " + accountConfig.getUser());
 									runningMailClients.release();
-									System.out.println("Connection " + config.getUser() + " is waiting " + config.getTimeInterval() + " sec");
-									while ((config.getTimeInterval()*1000) >
+									System.out.println("Connection " + accountConfig.getUser() + " is waiting " + accountConfig.getTimeInterval() + " sec");
+									while (!isStopped && (accountConfig.getTimeInterval()*1000) >
 											(deltaLastExecution = (System.currentTimeMillis() - connection.getLastExecution()))) {
 										try {
-											Thread.sleep((config.getTimeInterval() * 1000) - deltaLastExecution);
+											Thread.sleep((accountConfig.getTimeInterval() * 1000) - deltaLastExecution);
 										}catch(InterruptedException e){
 											if(isStopped){
 												//TimeOut Handling Server sollte innerhalb von 5 sec antworten
 												while(connections.containsKey(connectionID) &&
-														(deltaLastExecution = (System.currentTimeMillis() - connection.getLastExecution())) < connectionTimeOut){
+														(deltaLastExecution = (System.currentTimeMillis() - connection.getLastExecution())) < connectionTimeOut) {
 													try {
 														Thread.sleep(connectionTimeOut - deltaLastExecution);
-													}catch (InterruptedException e1){
+													} catch (InterruptedException e1) {
 
 													}
 
 												}
-												manager.stopConnection(connectionID);
-												connections.remove(connectionID);
-												System.out.println("Release " + config.getUser());
-												runningMailClients.release();
 												Thread.currentThread().interrupt();
 											}
 										}
 									}
 								}
 							} catch (IOException e) {
-								System.out.println("Connection Errror: " + config.getUser() + " retry in 5 sec.");
+								System.out.println("Connection Errror: " + accountConfig.getUser() + " retry in 5 sec.");
 								try {
 									runningMailClients.release();
 									Thread.sleep(5000);
@@ -155,7 +145,7 @@ public class ClientManager {
 							}
 							
 						}
-						System.out.println(config.getUser() + " herruntergefahren");
+						System.out.println(accountConfig.getUser() + " herruntergefahren");
 						Thread.currentThread().interrupt();
 					}
 

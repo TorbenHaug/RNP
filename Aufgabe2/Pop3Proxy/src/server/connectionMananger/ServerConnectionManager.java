@@ -19,11 +19,12 @@ public class ServerConnectionManager {
 	private final ServerAnswerHandler answerHandler;
 	private final Map<UID, Server> serverMap;
 	private final Map<UID, ClientConnectionDokument> clientMap;
-	private int maxLineSize;
-	
+	private final int maxLineSize;
+	private final int maxIncomingConnections;
 
-	
-	public ServerConnectionManager(InputBuffer<NetworkToken> buffer, ExecutorService executor, int maxLineSize) {
+
+	public ServerConnectionManager(InputBuffer<NetworkToken> buffer, ExecutorService executor, int maxLineSize, int maxIncomingConnections) {
+		this.maxIncomingConnections = maxIncomingConnections;
 		this.maxLineSize = maxLineSize;
 		this.buffer = buffer;
 		this.executor = executor;
@@ -39,7 +40,7 @@ public class ServerConnectionManager {
 	 */
 	public UID startServer(int port){
 		UID serverId = new UID();
-		Server server = new Server(port, executor, clientMap, buffer, maxLineSize);
+		Server server = new Server(port, executor, clientMap, buffer, maxLineSize, maxIncomingConnections);
 		serverMap.put(
 				serverId, 
 				server

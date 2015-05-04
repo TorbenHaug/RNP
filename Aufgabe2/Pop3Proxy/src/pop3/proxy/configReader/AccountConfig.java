@@ -2,7 +2,7 @@ package pop3.proxy.configReader;
 
 import java.util.List;
 
-public interface Config {
+public interface AccountConfig {
 	
 	public String getUser();
 	public String getPass();
