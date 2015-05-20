@@ -16,7 +16,7 @@ import java.util.LinkedList;
 
 public class FileCopyServer {
   // -------- Constants
-  public final static boolean TEST_OUTPUT_MODE = false;
+  public final static boolean TEST_OUTPUT_MODE = true;
   public final static int SERVER_PORT = 23000;
   public final static int UDP_PACKET_SIZE = 1008;
   public final static int CONNECTION_TIMEOUT = 3000; // milliseconds
