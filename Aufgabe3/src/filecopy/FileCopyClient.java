@@ -42,15 +42,9 @@ public class FileCopyClient extends Thread {
 
     private DatagramSocket socket = null;
 
-    private DatagramPacket packet;
-
-    byte[] receiveData;
-
-    byte[] sendByte = new byte[1000];
-    FCpacket fCpacket;
-
     private LinkedList<FCpacket> sendBuf;
 
+    private boolean sending = true;
     long seqNo = 1;
 
     int maxBuffSize = 1;
@@ -83,7 +77,6 @@ public class FileCopyClient extends Thread {
         serverErrorRate = Long.parseLong(errorRateArg);
         serverAddress = InetAddress.getByName(servername);
         sendBuf = new LinkedList<FCpacket>();
-        receiveData = new byte[UDP_PACKET_SIZE];
         bufferMutex = new ReentrantLock();
         notEmpty = bufferMutex.newCondition();
         notFull = bufferMutex.newCondition();
@@ -105,26 +98,31 @@ public class FileCopyClient extends Thread {
         });
         receiveThread.start();
 
-        fCpacket = makeControlPacket();
-        packet = new DatagramPacket(fCpacket.getSeqNumBytesAndData(), fCpacket.getLen()+8, serverAddress, serverPort);
-        testOut(" this is the data: " + new String(fCpacket.getData(), "UTF-8"));
+        FCpacket fCpacket = makeControlPacket();
+        DatagramPacket packet = new DatagramPacket(fCpacket.getSeqNumBytesAndData(), fCpacket.getLen()+8, serverAddress, serverPort);
+        testOut("Package : " + fCpacket.getSeqNum() + " this is the data: " + new String(fCpacket.getData(), "UTF-8"));
         insertPacketintoBuffer(fCpacket);
         socket.send(packet);
 
         inputFile = new FileInputStream(sourcePath);
         sendThread.start();
-        // ToDo!!
+
     }
 
     private void sendState() {
         try {
             int readNoBytes = 0;
+            byte[] sendByte = new byte[1000];
             while((readNoBytes = inputFile.read(sendByte)) != -1) {
-                fCpacket = new FCpacket(seqNo++, sendByte, readNoBytes);
-                packet = new DatagramPacket(fCpacket.getSeqNumBytesAndData(), fCpacket.getLen() + 8, serverAddress, serverPort);
+                //TODO: SetTimer
+                testOut("Bytes read: " + readNoBytes);
+                FCpacket fCpacket = new FCpacket(seqNo++, sendByte, readNoBytes);
+                DatagramPacket packet = new DatagramPacket(fCpacket.getSeqNumBytesAndData(), fCpacket.getLen() + 8, serverAddress, serverPort);
                 insertPacketintoBuffer(fCpacket);
+                testOut("Send Package: " + fCpacket.getSeqNum());
                 socket.send(packet);
             }
+            sending = false;
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -132,11 +130,14 @@ public class FileCopyClient extends Thread {
     }
     private void receiveState() {
         try {
-            packet = new DatagramPacket(receiveData, 8);
-            socket.receive(packet);
-            long ackNumber = makeLong(packet.getData(), 0, 8);
-            testOut("this is the ackNumber: " + ackNumber);
-            removeFomBuffer(ackNumber);
+            while(sending || !sendBuf.isEmpty()) {
+                byte[] receiveData = new byte[8];
+                DatagramPacket packet = new DatagramPacket(receiveData, 8);
+                socket.receive(packet);
+                long ackNumber = makeLong(packet.getData(), 0, 8);
+                testOut("this is the ackNumber: " + ackNumber);
+                removeFomBuffer(ackNumber);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -231,12 +232,13 @@ public class FileCopyClient extends Thread {
             }
         }
         int i=0;
-        for(i = 0;i<sendBuf.size();i++){
+        for(i = 0;i < sendBuf.size();i++){
             if (sendBuf.get(i).getSeqNum() == seqNo){
                 break;
             }
         }
         try {
+            testOut("Remove: " + i);
             sendBuf.remove(i);
             notFull.signal();
         }catch(IndexOutOfBoundsException e){}
