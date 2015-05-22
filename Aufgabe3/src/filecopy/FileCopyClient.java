@@ -6,8 +6,6 @@ package filecopy;
  Autoren:
  */
 
-import sun.awt.Mutex;
-
 import java.io.*;
 
 import java.net.*;
@@ -21,6 +19,8 @@ public class FileCopyClient extends Thread {
 
     // -------- Constants
     public final static boolean TEST_OUTPUT_MODE = true;
+    private static int ackCount = 0;
+    private static long averageRTT;
 
     public final int UDP_PACKET_SIZE = 1008;
     // -------- Public parms
@@ -45,9 +45,9 @@ public class FileCopyClient extends Thread {
     private LinkedList<FCpacket> sendBuf;
 
     private boolean sending = true;
-    long seqNo = 1;
+    static long seqNo = 1;
 
-    int maxBuffSize = 1;
+    int congestionWindow = 1;
 
     // -------- Streams
     private FileInputStream inputFile;
@@ -57,14 +57,25 @@ public class FileCopyClient extends Thread {
     Thread receiveThread;
     // -------- Variables
     // current default timeout in nanoseconds
-    private long timeoutValue = 100000000L;
+    private long timeoutValue = 40;
+    private long expRtt = 40; // nanoseconds
+    private long jitter = 20;
+
+    private long threshold = 8;
     Lock bufferMutex;
 
     private final Condition notEmpty;
     private final Condition notFull;
+    private int congestionCount = 0;
+    private static int timeOutCount = 0;
 
-    // ... ToDo
+    synchronized public long getTimeoutValue() {
+        return timeoutValue;
+    }
 
+    synchronized public void setTimeoutValue(long timeoutValue) {
+        this.timeoutValue = timeoutValue;
+    }
 
     // Constructor
     public FileCopyClient(String serverArg, String serverPortArg, String sourcePathArg,
@@ -82,7 +93,7 @@ public class FileCopyClient extends Thread {
         notFull = bufferMutex.newCondition();
     }
 
-    public void runFileCopyClient() throws IOException {
+    public void runFileCopyClient() throws IOException, InterruptedException {
         socket = new DatagramSocket();
         sendThread = new Thread(new Runnable() {
             @Override
@@ -99,14 +110,24 @@ public class FileCopyClient extends Thread {
         receiveThread.start();
 
         FCpacket fCpacket = makeControlPacket();
-        DatagramPacket packet = new DatagramPacket(fCpacket.getSeqNumBytesAndData(), fCpacket.getLen()+8, serverAddress, serverPort);
+       // DatagramPacket packet = new DatagramPacket(fCpacket.getSeqNumBytesAndData(), fCpacket.getLen()+8, serverAddress, serverPort);
         testOut("Package : " + fCpacket.getSeqNum() + " this is the data: " + new String(fCpacket.getData(), "UTF-8"));
         insertPacketintoBuffer(fCpacket);
-        socket.send(packet);
+        sendPacket(fCpacket);
 
         inputFile = new FileInputStream(sourcePath);
         sendThread.start();
+        sendThread.join();
+        receiveThread.join();
 
+    }
+
+    private void sendPacket(FCpacket toSend) throws IOException {
+        DatagramPacket packet = new DatagramPacket(toSend.getSeqNumBytesAndData(), toSend.getLen() + 8, serverAddress, serverPort);
+        testOut("Send Package: " + toSend.getSeqNum());
+        socket.send(packet);
+        startTimer(toSend);
+        toSend.setTimestamp(System.nanoTime());
     }
 
     private void sendState() {
@@ -114,13 +135,10 @@ public class FileCopyClient extends Thread {
             int readNoBytes = 0;
             byte[] sendByte = new byte[1000];
             while((readNoBytes = inputFile.read(sendByte)) != -1) {
-                //TODO: SetTimer
                 testOut("Bytes read: " + readNoBytes);
                 FCpacket fCpacket = new FCpacket(seqNo++, sendByte, readNoBytes);
-                DatagramPacket packet = new DatagramPacket(fCpacket.getSeqNumBytesAndData(), fCpacket.getLen() + 8, serverAddress, serverPort);
                 insertPacketintoBuffer(fCpacket);
-                testOut("Send Package: " + fCpacket.getSeqNum());
-                socket.send(packet);
+                sendPacket(fCpacket);
             }
             sending = false;
         } catch (IOException e) {
@@ -128,15 +146,35 @@ public class FileCopyClient extends Thread {
         }
 
     }
+
     private void receiveState() {
         try {
             while(sending || !sendBuf.isEmpty()) {
                 byte[] receiveData = new byte[8];
                 DatagramPacket packet = new DatagramPacket(receiveData, 8);
                 socket.receive(packet);
+                ackCount++;
                 long ackNumber = makeLong(packet.getData(), 0, 8);
                 testOut("this is the ackNumber: " + ackNumber);
-                removeFomBuffer(ackNumber);
+                FCpacket acknowlagedPacket = removeFomBuffer(ackNumber);
+                if(acknowlagedPacket != null) {
+                    cancelTimer(acknowlagedPacket);
+                    long duration = System.nanoTime() - acknowlagedPacket.getTimestamp();
+                    computeTimeoutValue(duration);
+                    averageRTT += duration;
+                    //TODO: Schauen wofür?
+                    acknowlagedPacket.setValidACK(true);
+                    if (congestionWindow < threshold){
+                        congestionWindow = congestionWindow + 1;
+                    }else{
+                        congestionCount++;
+                        if (congestionCount >= congestionWindow && congestionWindow < windowSize){
+                            congestionWindow++;
+                            congestionCount = 0;
+                        }
+                    }
+
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -149,7 +187,7 @@ public class FileCopyClient extends Thread {
      */
     public void startTimer(FCpacket packet) {
     /* Create, save and start timer for the given FCpacket */
-        FC_Timer timer = new FC_Timer(timeoutValue, this, packet.getSeqNum());
+        FC_Timer timer = new FC_Timer(getTimeoutValue(), this, packet.getSeqNum());
         packet.setTimer(timer);
         timer.start();
     }
@@ -167,16 +205,36 @@ public class FileCopyClient extends Thread {
      * Implementation specific task performed at timeout
      */
     public void timeoutTask(long seqNum) {
-        // ToDo
+        FCpacket timedOutPacket = getFromBuffer(seqNum);
+
+        //Wegen Raisecondition;
+        if(timedOutPacket != null) {
+            try {
+                timeOutCount++;
+                setTimeoutValue(getTimeoutValue() *2);
+                threshold = congestionWindow/2;
+                congestionWindow = 1;
+                sendPacket(timedOutPacket);
+            } catch (IOException e) {
+                testOut("Unable to send to server");
+                e.printStackTrace();
+            }
+        }
     }
 
 
     /**
      * Computes the current timeout value (in nanoseconds)
      */
-    public void computeTimeoutValue(long sampleRTT) {
+    public void computeTimeoutValue(long rtt) {
+        double x = 0.25;
+        double y= x/2;
 
-        // ToDo
+        expRtt = (long) ((1.0-y) * expRtt + y * rtt);
+
+        jitter = (long) ((1.0-x) * jitter + x * Math.abs(rtt - expRtt));
+
+        setTimeoutValue(expRtt + 4 * jitter);
     }
 
 
@@ -196,6 +254,10 @@ public class FileCopyClient extends Thread {
         return new FCpacket(0, sendData, sendData.length);
     }
 
+    /**
+     *
+     * @param out
+     */
     public void testOut(String out) {
         if (TEST_OUTPUT_MODE) {
             System.err.printf("%,d %s: %s\n", System.nanoTime(), Thread
@@ -203,10 +265,14 @@ public class FileCopyClient extends Thread {
         }
     }
 
+    /**
+     *
+     * @param insertPacket
+     */
     private void insertPacketintoBuffer(FCpacket insertPacket) {
     /* Insert the packet into the receive buffer at the right position */
         bufferMutex.lock();
-        while(sendBuf.size() >= maxBuffSize){
+        while(sendBuf.size() >= congestionWindow){
             try {
                 notFull.await();
             } catch (InterruptedException e) {
@@ -222,7 +288,13 @@ public class FileCopyClient extends Thread {
         bufferMutex.unlock();
     }
 
-    private void removeFomBuffer(long seqNo){
+    /**
+     *
+     * @param seqNo
+     * @return
+     */
+    private FCpacket removeFomBuffer(long seqNo){
+        FCpacket retval = null;
         bufferMutex.lock();
         while (sendBuf.isEmpty()){
             try {
@@ -238,12 +310,36 @@ public class FileCopyClient extends Thread {
             }
         }
         try {
-            testOut("Remove: " + i);
-            sendBuf.remove(i);
+            retval = sendBuf.remove(i);
+            testOut("Remove: " + retval.getSeqNum());
             notFull.signal();
         }catch(IndexOutOfBoundsException e){}
         bufferMutex.unlock();
+        return retval;
     }
+
+    /**
+     *
+     * @param seqNo
+     * @return
+     */
+    private FCpacket getFromBuffer(long seqNo){
+        FCpacket retval = null;
+        bufferMutex.lock();
+        int i=0;
+        for(i = 0;i < sendBuf.size();i++){
+            if (sendBuf.get(i).getSeqNum() == seqNo){
+                break;
+            }
+        }
+        try {
+            testOut("Get: " + i);
+            retval = sendBuf.get(i);
+        }catch(IndexOutOfBoundsException e){}
+        bufferMutex.unlock();
+        return retval;
+    }
+
     private long makeLong(byte[] buf, int i, int length) {
         long r = 0;
         length += i;
@@ -257,7 +353,14 @@ public class FileCopyClient extends Thread {
     public static void main(String argv[]) throws Exception {
         FileCopyClient myClient = new FileCopyClient(argv[0], argv[1], argv[2],
                 argv[3], argv[4], argv[5]);
+        long startTime = System.currentTimeMillis();
         myClient.runFileCopyClient();
+        myClient.join();
+        long duration = System.currentTimeMillis() - startTime;
+        System.out.println("Duration: " + duration + "ms");
+        System.out.println("Timeouts: " + timeOutCount);
+        System.out.println("AckCount: " + ackCount);
+        System.out.println("AvargeRTT: " + ((averageRTT/seqNo)/1000000) + "ms");
     }
 
 }
