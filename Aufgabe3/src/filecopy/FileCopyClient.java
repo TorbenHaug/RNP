@@ -57,8 +57,8 @@ public class FileCopyClient extends Thread {
     Thread receiveThread;
     // -------- Variables
     // current default timeout in nanoseconds
-    private long timeoutValue = 40;
-    private long expRtt = 40; // nanoseconds
+    private long timeoutValue = 15*1000000;
+    private long expRtt = 15*1000000; // nanoseconds
     private long jitter = 20;
 
     private long threshold = 8;
@@ -156,13 +156,12 @@ public class FileCopyClient extends Thread {
                 ackCount++;
                 long ackNumber = makeLong(packet.getData(), 0, 8);
                 testOut("this is the ackNumber: " + ackNumber);
-                FCpacket acknowlagedPacket = removeFomBuffer(ackNumber);
+                FCpacket acknowlagedPacket = getFromBuffer(ackNumber);
                 if(acknowlagedPacket != null) {
                     cancelTimer(acknowlagedPacket);
                     long duration = System.nanoTime() - acknowlagedPacket.getTimestamp();
                     computeTimeoutValue(duration);
                     averageRTT += duration;
-                    //TODO: Schauen wofür?
                     acknowlagedPacket.setValidACK(true);
                     if (congestionWindow < threshold){
                         congestionWindow = congestionWindow + 1;
@@ -175,6 +174,7 @@ public class FileCopyClient extends Thread {
                     }
 
                 }
+                cleanBuffer();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -290,32 +290,17 @@ public class FileCopyClient extends Thread {
 
     /**
      *
-     * @param seqNo
      * @return
      */
-    private FCpacket removeFomBuffer(long seqNo){
-        FCpacket retval = null;
+    private void cleanBuffer(){
         bufferMutex.lock();
-        while (sendBuf.isEmpty()){
-            try {
-                notEmpty.await();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        {
+            while (!sendBuf.isEmpty() && sendBuf.getFirst().isValidACK()){
+                sendBuf.removeFirst();
+                notFull.signal();
             }
         }
-        int i=0;
-        for(i = 0;i < sendBuf.size();i++){
-            if (sendBuf.get(i).getSeqNum() == seqNo){
-                break;
-            }
-        }
-        try {
-            retval = sendBuf.remove(i);
-            testOut("Remove: " + retval.getSeqNum());
-            notFull.signal();
-        }catch(IndexOutOfBoundsException e){}
         bufferMutex.unlock();
-        return retval;
     }
 
     /**
@@ -360,7 +345,33 @@ public class FileCopyClient extends Thread {
         System.out.println("Duration: " + duration + "ms");
         System.out.println("Timeouts: " + timeOutCount);
         System.out.println("AckCount: " + ackCount);
-        System.out.println("AvargeRTT: " + ((averageRTT/seqNo)/1000000) + "ms");
+        System.out.println("AvargeRTT: " + (((double) averageRTT/ (double) seqNo)/1000000.0) + "ms");
+
+        File file = new File( System.getProperty("user.dir") + File.separator + "statistics.csv");
+        //System.out.println(" this is the directory of the file: " + file.toString());
+        boolean newFile = false;
+        if (!file.exists()) {
+            file.createNewFile();
+            newFile = true;
+        }
+
+        FileWriter fileWriter = new FileWriter(file.getAbsoluteFile(), true);
+        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+        if(newFile){
+            bufferedWriter.append("ServerAdress;ServerPort;WindowSize;Error_Rate;Duration;TimeOuts;Acknowlages;AvarageRTT;\n");
+        }
+        bufferedWriter.append(
+                argv[0] + ";" +
+                argv[1] + ";" +
+                argv[4] + ";" +
+                argv[5] + ";" +
+                duration + ";" +
+                timeOutCount + ";" +
+                ackCount + ";" +
+                (((double) averageRTT/ (double) seqNo)/1000000.0) + ";\n"
+        );
+        bufferedWriter.close();
+        fileWriter.close();
     }
 
 }
